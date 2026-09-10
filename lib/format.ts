@@ -19,6 +19,8 @@ const proz0 = new Intl.NumberFormat("de-DE", { style: "percent", maximumFraction
 /** Große Beträge ohne Cent, kleine mit – so liest es sich am ruhigsten. */
 export function euro(betrag: number, cent?: boolean): string {
   if (!Number.isFinite(betrag)) return "–";
+  // Negative Null gibt es in der Buchhaltung nicht, in IEEE 754 schon.
+  if (betrag === 0) betrag = 0;
   const mitCent = cent ?? Math.abs(betrag) < 100;
   return (mitCent ? eur2 : eur0).format(betrag);
 }

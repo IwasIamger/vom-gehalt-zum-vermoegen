@@ -144,7 +144,7 @@ export default function Start() {
             Die Reihenfolge ist kein Detail. Wer investiert, bevor der Notgroschen steht, muss im
             Notfall verkaufen – meist zum schlechtesten Zeitpunkt.
           </p>
-          <ol className="mt-10 grid gap-5 md:grid-cols-4">
+          <ol className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {schritte.map((s) => (
               <li key={s.nr} className="rounded-xl border border-linie bg-papier p-6">
                 <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-gruen font-serif text-lg font-bold text-white">
@@ -177,6 +177,42 @@ export default function Start() {
               <p className="mt-2 text-sm leading-relaxed text-tinte2">{w.text}</p>
             </Link>
           ))}
+        </div>
+      </section>
+
+      {/* Cockpit */}
+      <section className="border-y border-linie bg-flaeche">
+        <div className="mx-auto grid max-w-6xl gap-10 px-5 py-20 md:grid-cols-[1fr_1fr] md:items-center">
+          <div>
+            <p className="eyebrow text-gruen">Cockpit</p>
+            <h2 className="mt-3 text-3xl sm:text-4xl">Einmal eintragen, dann zusehen</h2>
+            <p className="mt-5 max-w-lg leading-relaxed text-tinte2">
+              Konten, Depots und Schulden an einer Stelle. Das Cockpit rechnet daraus dein
+              Nettovermögen, zeigt die Entwicklung über die Monate, schreibt sie in die Zukunft
+              fort und sagt dir, wo deine Aufteilung vom Plan abweicht.
+            </p>
+            <Link
+              href="/cockpit"
+              className="mt-8 inline-block rounded-lg bg-gruen px-6 py-3.5 text-[15px] font-semibold text-white transition-colors hover:bg-[#256a43]"
+            >
+              Cockpit öffnen
+            </Link>
+          </div>
+          <ul className="grid gap-4 sm:grid-cols-2">
+            {[
+              { t: "Vermögensbilanz", d: "Alles, was da ist – und was fehlt." },
+              { t: "Entwicklung", d: "Jeder festgehaltene Stand ein Punkt auf der Kurve." },
+              { t: "Prognose", d: "Nominal und in heutiger Kaufkraft." },
+              { t: "Soll gegen Ist", d: "Mit Hinweis, was nachzukaufen ist." },
+              { t: "Haltefrist Krypto", d: "Der Zähler bis zur Steuerfreiheit." },
+              { t: "Offene Punkte", d: "Haken sich ab, sobald die Zahl steht." },
+            ].map((k) => (
+              <li key={k.t} className="rounded-xl border border-linie bg-papier p-5">
+                <p className="font-semibold text-tinte">{k.t}</p>
+                <p className="mt-1.5 text-sm leading-relaxed text-tinte2">{k.d}</p>
+              </li>
+            ))}
+          </ul>
         </div>
       </section>
 

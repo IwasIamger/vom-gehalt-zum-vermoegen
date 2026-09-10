@@ -49,6 +49,18 @@ h3 {
   text-wrap: balance;
 }
 
+/* Deutsche Komposita sind lang. In schmalen Spalten soll getrennt werden,
+   statt aus dem Kasten zu laufen – Überschriften bleiben ungetrennt. */
+p,
+li,
+dd,
+td {
+  hyphens: auto;
+}
+body {
+  overflow-wrap: break-word;
+}
+
 /* Kleine Versalzeile über Überschriften – dasselbe Element wie im Deck. */
 .eyebrow {
   font-size: 0.66rem;

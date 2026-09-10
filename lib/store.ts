@@ -8,6 +8,8 @@
 
 const KEY = "finanzcockpit.v1";
 
+export const VERSION = 2 as const;
+
 export type Konto = {
   id: string;
   typ: "konto" | "depot" | "kategorie";
@@ -28,35 +30,94 @@ export type AnlagePosition = {
   kaufdatum?: string;
 };
 
+/** Ein Posten der Vermögensbilanz – Guthaben, Depot, Sachwert oder Schuld. */
+export type PostenArt = "konto" | "depot" | "sachwert" | "schuld";
+
+export type Posten = {
+  id: string;
+  art: PostenArt;
+  name: string;
+  anbieter?: string;
+  /** Aktueller Stand in Euro. Schulden werden positiv erfasst und negativ verrechnet. */
+  wert?: number;
+  /** Was monatlich hierhin fließt – Grundlage der Prognose. */
+  sparrate?: number;
+  /** Nur für Depots: Zielgewicht innerhalb der Anlagen. 0.8 = 80 %. */
+  sollAnteil?: number;
+  /** Für die Krypto-Haltefrist: Datum des Kaufs. */
+  kaufdatum?: string;
+  /** Haltefrist-Timer für diesen Posten anzeigen. */
+  haltefrist?: boolean;
+};
+
+/** Ein festgehaltener Stand – daraus entsteht die Entwicklungskurve. */
+export type Momentaufnahme = {
+  datum: string;
+  gesamt: number;
+  anlagen: number;
+  schulden: number;
+};
+
+export type Steuerlage = {
+  /** Erwartete Kapitalerträge im laufenden Jahr. */
+  ertraegeJahr?: number;
+  /** Erteilter Freistellungsauftrag in Euro. */
+  freistellungsauftrag?: number;
+  /** 0, 0.08 oder 0.09. */
+  kirchensteuer?: number;
+};
+
 export type Daten = {
-  version: 1;
+  version: typeof VERSION;
   aktualisiert: string;
   /** Kapitel 3: die Zahl, aus der fast alles andere folgt. */
   nettomonatsausgaben?: number;
   zufluesse: { gehalt?: number; rueckfluss?: number };
   konten: Konto[];
   anlagen: AnlagePosition[];
+  bilanz: Posten[];
+  verlauf: Momentaufnahme[];
+  /** IDs abgehakter Aufgaben. Die Liste selbst wird abgeleitet, nicht gespeichert. */
+  erledigt: string[];
+  steuer: Steuerlage;
   einstellungen: {
     notgroschenMonate: number;
     renditeAnnahme: number;
     inflationAnnahme: number;
     kartenumsatzMonat?: number;
+    /** Jahre bis zum Zielzeitpunkt der Prognose. */
+    prognoseJahre?: number;
   };
 };
 
 export const LEER: Daten = {
-  version: 1,
+  version: VERSION,
   aktualisiert: new Date().toISOString(),
   zufluesse: {},
   konten: [],
   anlagen: [],
-  einstellungen: { notgroschenMonate: 4, renditeAnnahme: 0.07, inflationAnnahme: 0.02 },
+  bilanz: [],
+  verlauf: [],
+  erledigt: [],
+  steuer: {},
+  einstellungen: {
+    notgroschenMonate: 4,
+    renditeAnnahme: 0.07,
+    inflationAnnahme: 0.02,
+    prognoseJahre: 20,
+  },
 };
+
+function id(): string {
+  return typeof crypto !== "undefined" && crypto.randomUUID
+    ? crypto.randomUUID()
+    : Math.random().toString(36).slice(2);
+}
 
 /** Startbelegung nach dem Kontensystem aus dem Arbeitsblatt. */
 export function vorlageKontensystem(): Daten {
   const k = (typ: Konto["typ"], name: string, notiz?: string): Konto => ({
-    id: crypto.randomUUID(),
+    id: id(),
     typ,
     name,
     notiz,
@@ -74,10 +135,69 @@ export function vorlageKontensystem(): Daten {
       k("konto", "Urlaub"),
     ],
     anlagen: [
-      { id: crypto.randomUUID(), name: "ETF", sollAnteil: 0.8 },
-      { id: crypto.randomUUID(), name: "Krypto", sollAnteil: 0.1 },
-      { id: crypto.randomUUID(), name: "P2P", sollAnteil: 0.1 },
+      { id: id(), name: "ETF", sollAnteil: 0.8 },
+      { id: id(), name: "Krypto", sollAnteil: 0.1 },
+      { id: id(), name: "P2P", sollAnteil: 0.1 },
     ],
+  };
+}
+
+/** Startbelegung der Bilanz – die Struktur aus Kapitel 10, ohne Beträge. */
+export function vorlageBilanz(): Posten[] {
+  return [
+    { id: id(), art: "konto", name: "Hauptkonto" },
+    { id: id(), art: "konto", name: "Notgroschen" },
+    { id: id(), art: "depot", name: "ETF", sollAnteil: 0.8 },
+    { id: id(), art: "depot", name: "Krypto", sollAnteil: 0.1, haltefrist: true },
+    { id: id(), art: "depot", name: "P2P", sollAnteil: 0.1 },
+  ];
+}
+
+export function neuerPosten(art: PostenArt): Posten {
+  return { id: id(), art, name: "", haltefrist: art === "depot" ? false : undefined };
+}
+
+/**
+ * Ältere Stände weiterverwenden statt verwerfen – niemand soll seine Eingaben
+ * verlieren, nur weil eine Funktion dazugekommen ist.
+ */
+function migriere(roh: unknown): Daten | null {
+  if (!roh || typeof roh !== "object") return null;
+  const d = roh as Omit<Partial<Daten>, "version"> & { version?: number };
+  if (d.version !== 1 && d.version !== 2) return null;
+
+  // Wer sein Kontensystem schon ausgefuellt hat, soll seine Konten und Depots
+  // nicht ein zweites Mal benennen muessen. Betraege werden bewusst NICHT
+  // uebernommen: im Kontensystem stehen monatliche Fluesse, in der Bilanz Staende.
+  const bilanz: Posten[] =
+    d.bilanz ??
+    [
+      ...(d.konten ?? [])
+        .filter((k) => k.typ === "konto")
+        .map((k) => ({ id: k.id, art: "konto" as const, name: k.name, anbieter: k.bank })),
+      ...(d.anlagen ?? []).map((a) => ({
+        id: a.id,
+        art: "depot" as const,
+        name: a.name,
+        anbieter: a.anbieter,
+        wert: a.wert,
+        sparrate: a.betragMonat,
+        sollAnteil: a.sollAnteil,
+        kaufdatum: a.kaufdatum,
+        // Wer ein Kaufdatum gepflegt hat, will die Haltefrist auch sehen.
+        haltefrist: a.kaufdatum ? true : undefined,
+      })),
+    ];
+
+  return {
+    ...LEER,
+    ...d,
+    version: VERSION,
+    bilanz,
+    verlauf: d.verlauf ?? [],
+    erledigt: d.erledigt ?? [],
+    steuer: d.steuer ?? {},
+    einstellungen: { ...LEER.einstellungen, ...(d.einstellungen ?? {}) },
   };
 }
 
@@ -86,8 +206,7 @@ export function laden(): Daten {
   try {
     const roh = window.localStorage.getItem(KEY);
     if (!roh) return LEER;
-    const d = JSON.parse(roh) as Daten;
-    return d.version === 1 ? { ...LEER, ...d } : LEER;
+    return migriere(JSON.parse(roh)) ?? LEER;
   } catch {
     return LEER;
   }
@@ -111,9 +230,7 @@ export function exportieren(daten: Daten): string {
 
 export function importieren(text: string): Daten | null {
   try {
-    const d = JSON.parse(text) as Daten;
-    if (d?.version !== 1) return null;
-    return { ...LEER, ...d };
+    return migriere(JSON.parse(text));
   } catch {
     return null;
   }
