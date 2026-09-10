@@ -15,6 +15,11 @@ const punkte = [
     pfad: "M4 5.5A1.5 1.5 0 0 1 5.5 4H10a2 2 0 0 1 2 2 2 2 0 0 1 2-2h4.5A1.5 1.5 0 0 1 20 5.5v11a1.5 1.5 0 0 1-1.5 1.5H14a2 2 0 0 0-2 2 2 2 0 0 0-2-2H5.5A1.5 1.5 0 0 1 4 16.5v-11ZM12 6v14",
   },
   {
+    href: "/ausgaben",
+    label: "Ausgaben",
+    pfad: "M12 5v14M5 12h14",
+  },
+  {
     href: "/rechner",
     label: "Rechner",
     pfad: "M6 3h12a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Zm2 4h8M8 12h2m3 0h3m-8 4h2m3 0h3",
@@ -48,13 +53,13 @@ export default function Tableiste() {
               <Link
                 href={p.href}
                 aria-current={aktiv ? "page" : undefined}
-                className={`flex flex-col items-center gap-1 py-2.5 text-[11px] font-medium transition-colors ${
+                className={`flex flex-col items-center gap-1 py-2.5 text-[10px] font-medium transition-colors ${
                   aktiv ? "text-gruen" : "text-tinte3"
                 }`}
               >
                 <svg
                   viewBox="0 0 24 24"
-                  className="h-6 w-6"
+                  className="h-[22px] w-[22px]"
                   fill="none"
                   stroke="currentColor"
                   strokeWidth={aktiv ? 2 : 1.6}

@@ -15,6 +15,8 @@ import {
   STEUER,
   steuersatz,
 } from "@/lib/finance";
+import { fortschritt, schnitt } from "@/lib/ausgaben";
+import { euro } from "@/lib/format";
 import type { Daten, Posten } from "@/lib/store";
 
 // ─────────────────────────────────────────────────────────── Bilanz
@@ -167,16 +169,24 @@ export function aufgaben(daten: Daten): Aufgabe[] {
   const pb = pauschbetrag(daten);
   const rate = sparrateGesamt(daten.bilanz);
   const schulden = daten.bilanz.filter((p) => p.art === "schuld" && (p.wert ?? 0) > 0);
+  const fs = fortschritt(daten.ausgaben);
+  const sch = schnitt(daten.ausgaben);
 
   const liste: Aufgabe[] = [
     {
       id: "ausgaben",
       titel: "Ausgaben drei Monate tracken",
-      text: "Ohne die durchschnittlichen Nettomonatsausgaben lässt sich weder der Notgroschen bemessen noch die Sparrate prüfen.",
+      text: fs.volleMonate
+        ? `${fs.volleMonate} von 3 vollen Monaten erfasst${
+            sch.wert !== undefined
+              ? `, Schnitt bisher ${euro(sch.wert, false)}`
+              : ""
+          }. Ohne diese Zahl lässt sich weder der Notgroschen bemessen noch die Sparrate prüfen.`
+        : "Ohne die durchschnittlichen Nettomonatsausgaben lässt sich weder der Notgroschen bemessen noch die Sparrate prüfen.",
       ton: "rot",
       erfuellt: (daten.nettomonatsausgaben ?? 0) > 0,
-      href: "/methode/ausgaben",
-      linkLabel: "Kapitel 3 lesen",
+      href: "/ausgaben",
+      linkLabel: daten.ausgaben.length ? "Weiter erfassen" : "Ausgaben erfassen",
     },
     {
       id: "bilanz",
@@ -250,7 +260,7 @@ export function aufgaben(daten: Daten): Aufgabe[] {
       text:
         pb.auftrag >= pb.maximum
           ? "Der Pauschbetrag ist vollständig verteilt."
-          : `Noch ${Math.round(pb.maximum - pb.auftrag)} € des Sparerpauschbetrags sind nicht erteilt. Kostenlos, zwei Minuten, bis zu 264 € Steuern pro Jahr.`,
+          : `Noch ${euro(pb.maximum - pb.auftrag, false)} des Sparerpauschbetrags sind nicht erteilt. Kostenlos, zwei Minuten, bis zu 264 € Steuern pro Jahr.`,
       ton: "gold",
       erfuellt: pb.auftrag >= pb.maximum,
       href: "/methode/steuern",

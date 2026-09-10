@@ -30,6 +30,11 @@ export function prozent(anteil: number, stellen: 0 | 1 = 1): string {
   return (stellen === 0 ? proz0 : proz1).format(anteil);
 }
 
+/** "1 Tag" statt "1 Tage" – kleine Sache, aber sonst liest es sich schlampig. */
+export function plural(anzahl: number, ein: string, viele: string): string {
+  return `${anzahl.toLocaleString("de-DE")} ${anzahl === 1 ? ein : viele}`;
+}
+
 export function datum(d: Date | string): string {
   const x = typeof d === "string" ? new Date(d) : d;
   return x.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" });

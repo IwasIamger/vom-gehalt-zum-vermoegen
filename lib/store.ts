@@ -8,7 +8,7 @@
 
 const KEY = "finanzcockpit.v1";
 
-export const VERSION = 2 as const;
+export const VERSION = 3 as const;
 
 export type Konto = {
   id: string;
@@ -58,6 +58,26 @@ export type Momentaufnahme = {
   schulden: number;
 };
 
+/** Ein erfasster Ausgabenposten. Die Grundlage von Kapitel 3. */
+export type Ausgabe = {
+  id: string;
+  /** ISO-Datum, jjjj-mm-tt. */
+  datum: string;
+  betrag: number;
+  kategorie: string;
+  notiz?: string;
+};
+
+/** Vorgabe nach dem Kontensystem – jederzeit erweiterbar. */
+export const KATEGORIEN_START = [
+  "Täglicher Bedarf",
+  "Fixkosten",
+  "Dauerausgaben",
+  "Auto",
+  "Freizeit",
+  "Sonstiges",
+];
+
 export type Steuerlage = {
   /** Erwartete Kapitalerträge im laufenden Jahr. */
   ertraegeJahr?: number;
@@ -77,6 +97,8 @@ export type Daten = {
   anlagen: AnlagePosition[];
   bilanz: Posten[];
   verlauf: Momentaufnahme[];
+  ausgaben: Ausgabe[];
+  kategorien: string[];
   /** IDs abgehakter Aufgaben. Die Liste selbst wird abgeleitet, nicht gespeichert. */
   erledigt: string[];
   steuer: Steuerlage;
@@ -98,6 +120,8 @@ export const LEER: Daten = {
   anlagen: [],
   bilanz: [],
   verlauf: [],
+  ausgaben: [],
+  kategorien: KATEGORIEN_START,
   erledigt: [],
   steuer: {},
   einstellungen: {
@@ -153,6 +177,10 @@ export function vorlageBilanz(): Posten[] {
   ];
 }
 
+export function neueAusgabe(kategorie: string): Ausgabe {
+  return { id: id(), datum: new Date().toISOString().slice(0, 10), betrag: 0, kategorie };
+}
+
 export function neuerPosten(art: PostenArt): Posten {
   return { id: id(), art, name: "", haltefrist: art === "depot" ? false : undefined };
 }
@@ -164,7 +192,7 @@ export function neuerPosten(art: PostenArt): Posten {
 function migriere(roh: unknown): Daten | null {
   if (!roh || typeof roh !== "object") return null;
   const d = roh as Omit<Partial<Daten>, "version"> & { version?: number };
-  if (d.version !== 1 && d.version !== 2) return null;
+  if (d.version !== 1 && d.version !== 2 && d.version !== 3) return null;
 
   // Wer sein Kontensystem schon ausgefuellt hat, soll seine Konten und Depots
   // nicht ein zweites Mal benennen muessen. Betraege werden bewusst NICHT
@@ -195,6 +223,8 @@ function migriere(roh: unknown): Daten | null {
     version: VERSION,
     bilanz,
     verlauf: d.verlauf ?? [],
+    ausgaben: d.ausgaben ?? [],
+    kategorien: d.kategorien?.length ? d.kategorien : KATEGORIEN_START,
     erledigt: d.erledigt ?? [],
     steuer: d.steuer ?? {},
     einstellungen: { ...LEER.einstellungen, ...(d.einstellungen ?? {}) },

@@ -29,6 +29,7 @@ export const viewport: Viewport = {
 
 const navigation = [
   { href: "/methode", label: "Methode" },
+  { href: "/ausgaben", label: "Ausgaben" },
   { href: "/rechner", label: "Rechner" },
   { href: "/kontensystem", label: "Kontensystem" },
   { href: "/cockpit", label: "Cockpit" },

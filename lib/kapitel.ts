@@ -402,6 +402,12 @@ export const KAPITEL: Kapitel[] = [
             titel: "Ziel: die durchschnittlichen Nettomonatsausgaben.",
             text: "Diese eine Zahl brauchen wir gleich für den Notgroschen – und später für jede Prognose.",
           },
+          {
+            art: "cta",
+            text: "Wenn du keine App dafür einrichten willst: Hier kannst du direkt erfassen. Betrag, Kategorie, fertig – nach drei vollen Monaten steht dein Schnitt.",
+            label: "Ausgaben erfassen",
+            href: "/ausgaben",
+          },
         ],
       },
       {
