@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import Link from "next/link";
+import Tableiste from "@/components/Tableiste";
 import "./globals.css";
 
 const bp = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
@@ -43,7 +44,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <span className="font-serif text-lg font-bold text-tinte">Vom Gehalt</span>
               <span className="font-serif text-lg font-bold text-gruen">zum Vermögen</span>
             </Link>
-            <nav className="ml-auto flex items-center gap-1 text-sm">
+            <nav className="ml-auto hidden items-center gap-1 text-sm sm:flex">
               {navigation.map((n) => (
                 <Link
                   key={n.href}
@@ -59,7 +60,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
         <main className="flex-1">{children}</main>
 
-        <footer className="kein-druck border-t border-linie bg-flaeche">
+        <Tableiste />
+
+        <footer className="kein-druck border-t border-linie bg-flaeche pb-16 sm:pb-0">
           <div className="mx-auto max-w-6xl px-5 py-10 text-sm text-tinte2">
             <div className="flex flex-wrap items-start justify-between gap-8">
               <div className="max-w-md">
