@@ -8,7 +8,7 @@
 
 const KEY = "finanzcockpit.v1";
 
-export const VERSION = 3 as const;
+export const VERSION = 4 as const;
 
 export type Konto = {
   id: string;
@@ -95,6 +95,21 @@ export const KATEGORIEN_START = [
   "Sonstiges",
 ];
 
+/**
+ * Eine Anmerkung zur App selbst – Fehler, Wunsch oder Frage.
+ *
+ * Bleibt wie alles andere lokal. Zum Weitergeben exportiert der Nutzer sie
+ * bewusst als Datei oder kopiert den Text; nichts wird still verschickt.
+ */
+export type Hinweis = {
+  id: string;
+  datum: string;
+  art: "fehler" | "wunsch" | "frage";
+  seite?: string;
+  text: string;
+  erledigt?: boolean;
+};
+
 export type Steuerlage = {
   /** Erwartete Kapitalerträge im laufenden Jahr. */
   ertraegeJahr?: number;
@@ -116,6 +131,7 @@ export type Daten = {
   verlauf: Momentaufnahme[];
   ausgaben: Ausgabe[];
   kategorien: string[];
+  hinweise: Hinweis[];
   /** IDs abgehakter Aufgaben. Die Liste selbst wird abgeleitet, nicht gespeichert. */
   erledigt: string[];
   steuer: Steuerlage;
@@ -139,6 +155,7 @@ export const LEER: Daten = {
   verlauf: [],
   ausgaben: [],
   kategorien: KATEGORIEN_START,
+  hinweise: [],
   erledigt: [],
   steuer: {},
   einstellungen: {
@@ -194,8 +211,38 @@ export function vorlageBilanz(): Posten[] {
   ];
 }
 
+export function neuerHinweis(art: Hinweis["art"], text: string, seite?: string): Hinweis {
+  return { id: id(), datum: new Date().toISOString(), art, text, seite };
+}
+
 export function neueAusgabe(kategorie: string): Ausgabe {
   return { id: id(), datum: new Date().toISOString().slice(0, 10), betrag: 0, kategorie };
+}
+
+/**
+ * Posten nach Namen anlegen oder ergänzen.
+ *
+ * Der geführte Einstieg soll bestehende Eingaben nicht überschreiben, sondern
+ * auffüllen – wer schon ein Konto "Notgroschen" hat, bekommt kein zweites.
+ */
+export function postenSetzen(
+  bilanz: Posten[],
+  art: PostenArt,
+  name: string,
+  werte: Partial<Omit<Posten, "id" | "art" | "name">>,
+): Posten[] {
+  const i = bilanz.findIndex(
+    (p) => p.art === art && p.name.trim().toLowerCase() === name.trim().toLowerCase(),
+  );
+  if (i < 0) return [...bilanz, { id: id(), art, name, ...werte }];
+  return bilanz.map((p, k) => (k === i ? { ...p, ...werte } : p));
+}
+
+/** Posten nach Namen entfernen – wenn im Einstieg ein Haken zurückgenommen wird. */
+export function postenLoeschen(bilanz: Posten[], art: PostenArt, name: string): Posten[] {
+  return bilanz.filter(
+    (p) => !(p.art === art && p.name.trim().toLowerCase() === name.trim().toLowerCase()),
+  );
 }
 
 export function neuerPosten(art: PostenArt): Posten {
@@ -209,7 +256,7 @@ export function neuerPosten(art: PostenArt): Posten {
 function migriere(roh: unknown): Daten | null {
   if (!roh || typeof roh !== "object") return null;
   const d = roh as Omit<Partial<Daten>, "version"> & { version?: number };
-  if (d.version !== 1 && d.version !== 2 && d.version !== 3) return null;
+  if (!(typeof d.version === "number" && d.version >= 1 && d.version <= VERSION)) return null;
 
   // Wer sein Kontensystem schon ausgefuellt hat, soll seine Konten und Depots
   // nicht ein zweites Mal benennen muessen. Betraege werden bewusst NICHT
@@ -242,6 +289,7 @@ function migriere(roh: unknown): Daten | null {
     verlauf: d.verlauf ?? [],
     ausgaben: d.ausgaben ?? [],
     kategorien: d.kategorien?.length ? d.kategorien : KATEGORIEN_START,
+    hinweise: d.hinweise ?? [],
     erledigt: d.erledigt ?? [],
     steuer: d.steuer ?? {},
     einstellungen: { ...LEER.einstellungen, ...(d.einstellungen ?? {}) },

@@ -185,17 +185,25 @@ export default function Cockpit() {
         <div className="mt-8 rounded-xl border border-gold/50 bg-gold-hell p-6">
           <p className="font-serif text-lg font-bold text-gold">Noch nichts erfasst</p>
           <p className="mt-2 max-w-2xl text-sm leading-relaxed text-tinte2">
-            Das Cockpit rechnet mit dem, was du einträgst. Fang mit einer Vorlage an – Konten und
-            Depots aus Kapitel 10 – und trag deine eigenen Stände ein. Alles bleibt in diesem
-            Browser.
+            Das Cockpit rechnet mit dem, was du einträgst. Der geführte Einstieg fragt dich in fünf
+            Schritten das Nötige ab – oder du legst eine leere Vorlage an und füllst sie selbst.
+            Alles bleibt in diesem Browser.
           </p>
-          <button
-            type="button"
-            onClick={() => setDaten((d) => ({ ...d, bilanz: vorlageBilanz() }))}
-            className="mt-4 rounded-lg bg-gruen px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#256a43]"
-          >
-            Vorlage anlegen
-          </button>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <Link
+              href="/start"
+              className="rounded-lg bg-gruen px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#256a43]"
+            >
+              Geführter Einstieg
+            </Link>
+            <button
+              type="button"
+              onClick={() => setDaten((d) => ({ ...d, bilanz: vorlageBilanz() }))}
+              className="rounded-lg border border-linie2 px-5 py-2.5 text-sm font-semibold text-tinte transition-colors hover:border-gruen hover:text-gruen"
+            >
+              Leere Vorlage anlegen
+            </button>
+          </div>
         </div>
       )}
 

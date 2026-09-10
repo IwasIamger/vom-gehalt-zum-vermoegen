@@ -82,10 +82,10 @@ export default function Start() {
             </p>
             <div className="mt-9 flex flex-wrap gap-3">
               <Link
-                href="/kontensystem"
+                href="/start"
                 className="rounded-lg bg-gruen px-6 py-3.5 text-[15px] font-semibold text-white transition-colors hover:bg-[#256a43]"
               >
-                Kontensystem einrichten
+                In fünf Minuten startklar
               </Link>
               <Link
                 href="/methode"
@@ -228,7 +228,7 @@ export default function Start() {
             Der erste Sparplan muss nicht der richtige sein. Er muss nur existieren.
           </p>
           <Link
-            href="/kontensystem"
+            href="/start"
             className="mt-8 inline-block rounded-lg bg-gruen px-6 py-3.5 text-[15px] font-semibold text-white transition-colors hover:bg-[#256a43]"
           >
             Jetzt anfangen

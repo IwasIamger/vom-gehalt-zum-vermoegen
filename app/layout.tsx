@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import Link from "next/link";
+import Anmerkung from "@/components/Anmerkung";
 import Tableiste from "@/components/Tableiste";
 import "./globals.css";
 
@@ -61,6 +62,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
         <main className="flex-1">{children}</main>
 
+        <Anmerkung />
         <Tableiste />
 
         <footer className="kein-druck border-t border-linie bg-flaeche pb-16 sm:pb-0">
@@ -79,6 +81,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <p className="max-w-sm">
                   Keine Anlageberatung. Die Inhalte dienen der Information und ersetzen keine
                   individuelle Beratung. Stand der Angaben: September 2026.
+                </p>
+                <p className="mt-3">
+                  <Link href="/hinweise" className="underline transition-colors hover:text-gruen">
+                    Anmerkungen zur App
+                  </Link>
                 </p>
                 <p className="mt-3">© 2026 M. Ackermann</p>
               </div>
