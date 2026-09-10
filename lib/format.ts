@@ -15,6 +15,12 @@ const proz1 = new Intl.NumberFormat("de-DE", {
   maximumFractionDigits: 1,
 });
 const proz0 = new Intl.NumberFormat("de-DE", { style: "percent", maximumFractionDigits: 0 });
+// Zinssätze: so genau wie nötig, ohne "7,00 %" zu schreiben, wo "7 %" gemeint ist.
+const prozKurz = new Intl.NumberFormat("de-DE", {
+  style: "percent",
+  minimumFractionDigits: 0,
+  maximumFractionDigits: 2,
+});
 
 /** Große Beträge ohne Cent, kleine mit – so liest es sich am ruhigsten. */
 export function euro(betrag: number, cent?: boolean): string {
@@ -28,6 +34,10 @@ export function euro(betrag: number, cent?: boolean): string {
 export function prozent(anteil: number, stellen: 0 | 1 = 1): string {
   if (!Number.isFinite(anteil)) return "–";
   return (stellen === 0 ? proz0 : proz1).format(anteil);
+}
+
+export function prozentKurz(anteil: number): string {
+  return Number.isFinite(anteil) ? prozKurz.format(anteil) : "–";
 }
 
 /** "1 Tag" statt "1 Tage" – kleine Sache, aber sonst liest es sich schlampig. */

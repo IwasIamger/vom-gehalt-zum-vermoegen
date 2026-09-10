@@ -3,14 +3,16 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import Linienchart from "@/components/Linienchart";
-import { datum as fdatum, euro, prozent, zahlAusEingabe } from "@/lib/format";
+import { datum as fdatum, euro, prozent, prozentKurz, zahlAusEingabe } from "@/lib/format";
 import {
   REBALANCING_SCHWELLE,
   aufgaben,
   haltefristen,
   notgroschen,
   pauschbetrag,
+  mischrendite,
   prognose,
+  renditeVon,
   sollIst,
   sparrateGesamt,
   summen,
@@ -284,6 +286,8 @@ export default function Cockpit() {
                       posten={p}
                       onChange={(feld, wert) => aendere(p.id, feld, wert)}
                       onEntfernen={() => entferne(p.id)}
+                      vorgabe={(Math.round(renditeVon(p, daten) * 10000) / 100)
+                        .toLocaleString("de-DE")}
                     />
                   ))}
                   {posten.length === 0 && (
@@ -608,12 +612,14 @@ function Eingabe({
   onChange,
   einheit = "€",
   breit,
+  platzhalter = "0",
 }: {
   label: string;
   wert?: number;
   onChange: (v: number | undefined) => void;
   einheit?: string;
   breit?: boolean;
+  platzhalter?: string;
 }) {
   const [text, setText] = useState(wert !== undefined ? String(wert).replace(".", ",") : "");
   const [fokus, setFokus] = useState(false);
@@ -632,7 +638,7 @@ function Eingabe({
         <input
           inputMode="decimal"
           value={text}
-          placeholder="0"
+          placeholder={platzhalter}
           onFocus={() => setFokus(true)}
           onBlur={() => setFokus(false)}
           onChange={(e) => {
@@ -651,10 +657,12 @@ function Zeile({
   posten,
   onChange,
   onEntfernen,
+  vorgabe,
 }: {
   posten: Posten;
   onChange: (feld: keyof Posten, wert: unknown) => void;
   onEntfernen: () => void;
+  vorgabe: string;
 }) {
   const istDepot = posten.art === "depot";
   return (
@@ -685,41 +693,66 @@ function Zeile({
           type="button"
           onClick={onEntfernen}
           aria-label={`${posten.name || "Posten"} entfernen`}
-          className="kein-druck h-10 shrink-0 rounded-md border border-linie2 px-3 text-sm text-tinte3 transition-colors hover:border-rot hover:text-rot"
+          className="kein-druck h-10 shrink-0 justify-self-end rounded-md border border-linie2 px-3 text-sm text-tinte3 transition-colors hover:border-rot hover:text-rot"
         >
           Entfernen
         </button>
       </div>
 
-      {istDepot && (
-        <div className="mt-4 grid gap-4 border-t border-linie pt-4 md:grid-cols-[1fr_1fr_auto] md:items-end">
-          <Eingabe
-            label="Soll-Anteil"
-            einheit="%"
-            wert={posten.sollAnteil !== undefined ? Math.round(posten.sollAnteil * 1000) / 10 : undefined}
-            onChange={(v) => onChange("sollAnteil", v === undefined ? undefined : v / 100)}
-            breit
-          />
-          <label className="block">
-            <span className="eyebrow mb-1.5 block text-tinte3">Kaufdatum</span>
-            <input
-              type="date"
-              value={posten.kaufdatum ?? ""}
-              onChange={(e) => onChange("kaufdatum", e.target.value || undefined)}
-              className="w-full rounded-md border border-linie2 bg-papier px-3 py-2 outline-none focus:border-gruen"
+      <div
+        className={`mt-4 grid gap-4 border-t border-linie pt-4 md:items-end ${
+          istDepot ? "md:grid-cols-[1fr_1fr_1fr_auto]" : "md:grid-cols-[1fr_2fr]"
+        }`}
+      >
+        <Eingabe
+          label={posten.art === "schuld" ? "Kreditzins p. a." : "Rendite p. a."}
+          einheit="%"
+          wert={posten.rendite !== undefined ? Math.round(posten.rendite * 1000) / 10 : undefined}
+          onChange={(v) => onChange("rendite", v === undefined ? undefined : v / 100)}
+          platzhalter={vorgabe}
+          breit
+        />
+
+        {istDepot ? (
+          <>
+            <Eingabe
+              label="Soll-Anteil"
+              einheit="%"
+              wert={
+                posten.sollAnteil !== undefined ? Math.round(posten.sollAnteil * 1000) / 10 : undefined
+              }
+              onChange={(v) => onChange("sollAnteil", v === undefined ? undefined : v / 100)}
+              breit
             />
-          </label>
-          <label className="flex items-center gap-2.5 pb-2.5 text-sm text-tinte2">
-            <input
-              type="checkbox"
-              checked={!!posten.haltefrist}
-              onChange={(e) => onChange("haltefrist", e.target.checked)}
-              className="h-4 w-4 accent-[var(--color-gruen)]"
-            />
-            Haltefrist verfolgen
-          </label>
-        </div>
-      )}
+            <label className="block">
+              <span className="eyebrow mb-1.5 block text-tinte3">Kaufdatum</span>
+              <input
+                type="date"
+                value={posten.kaufdatum ?? ""}
+                onChange={(e) => onChange("kaufdatum", e.target.value || undefined)}
+                className="w-full rounded-md border border-linie2 bg-papier px-3 py-2 outline-none focus:border-gruen"
+              />
+            </label>
+            <label className="flex items-center gap-2.5 pb-2.5 text-sm text-tinte2">
+              <input
+                type="checkbox"
+                checked={!!posten.haltefrist}
+                onChange={(e) => onChange("haltefrist", e.target.checked)}
+                className="h-4 w-4 accent-[var(--color-gruen)]"
+              />
+              Haltefrist verfolgen
+            </label>
+          </>
+        ) : (
+          <p className="pb-2.5 text-xs leading-relaxed text-tinte3">
+            {posten.art === "konto"
+              ? "Leer lassen heißt Tagesgeld mit 2,25 %. Für ein Girokonto gehört hier eine 0 hinein."
+              : posten.art === "sachwert"
+                ? "Ohne Angabe wird der Wert unverändert fortgeschrieben."
+                : "Der Zins, mit dem die Restschuld wächst. Die Tilgung oben rechnet dagegen."}
+          </p>
+        )}
+      </div>
     </div>
   );
 }
@@ -737,14 +770,16 @@ function Prognosebereich({
 }) {
   const jahre = daten.einstellungen.prognoseJahre ?? 20;
   const punkte = useMemo(() => prognose(daten, jahre), [daten, jahre]);
+  const misch = useMemo(() => mischrendite(daten), [daten]);
   const letzte = punkte[punkte.length - 1];
 
   return (
     <section className="rounded-xl border border-linie bg-flaeche p-6">
       <h2 className="text-xl">Prognose</h2>
       <p className="mt-2 max-w-2xl text-sm leading-relaxed text-tinte2">
-        Aus deinem heutigen Stand ({euro(start)}) und deiner monatlichen Sparrate ({euro(rate)}).
-        Eine Fortschreibung, keine Zusage – der Markt liefert keine gerade Linie.
+        Aus deinem heutigen Stand ({euro(start)}) und deiner monatlichen Sparrate ({euro(rate)}) –
+        jeder Posten mit seinem eigenen Zins. Eine Fortschreibung, keine Zusage: der Markt liefert
+        keine gerade Linie.
       </p>
 
       <div className="mt-6 grid gap-6 sm:grid-cols-3">
@@ -766,7 +801,7 @@ function Prognosebereich({
         </label>
         <label className="block">
           <span className="eyebrow mb-2 block text-tinte3">
-            Rendite: {prozent(daten.einstellungen.renditeAnnahme)}
+            Depots: {prozent(daten.einstellungen.renditeAnnahme)}
           </span>
           <input
             type="range"
@@ -806,6 +841,49 @@ function Prognosebereich({
           />
         </label>
       </div>
+
+      {/* Womit gerechnet wird – sonst ist die Kurve eine Behauptung. */}
+      <div className="mt-6 overflow-hidden rounded-xl border border-linie">
+        <table className="w-full text-left text-sm">
+          <thead>
+            <tr className="border-b border-linie bg-papier">
+              <th className="eyebrow px-4 py-2.5 text-tinte3">Posten</th>
+              <th className="eyebrow px-4 py-2.5 text-right text-tinte3">Stand</th>
+              <th className="eyebrow px-4 py-2.5 text-right text-tinte3">p. M.</th>
+              <th className="eyebrow px-4 py-2.5 text-right text-tinte3">Zins</th>
+            </tr>
+          </thead>
+          <tbody>
+            {daten.bilanz.map((p) => (
+              <tr key={p.id} className="border-b border-linie last:border-0">
+                <td className="px-4 py-2.5 text-tinte">
+                  {p.name || "Ohne Namen"}
+                  {p.art === "schuld" && (
+                    <span className="ml-2 text-xs text-rot">Schuld</span>
+                  )}
+                </td>
+                <td className="tabular px-4 py-2.5 text-right text-tinte2">
+                  {euro(p.wert ?? 0, false)}
+                </td>
+                <td className="tabular px-4 py-2.5 text-right text-tinte2">
+                  {euro(p.sparrate ?? 0, false)}
+                </td>
+                <td
+                  className={`tabular px-4 py-2.5 text-right font-semibold ${
+                    p.rendite === undefined ? "text-tinte3" : "text-tinte"
+                  }`}
+                >
+                  {prozentKurz(renditeVon(p, daten))}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="mt-2.5 text-xs text-tinte3">
+        Grau = Vorgabe der Anlageklasse. Eigene Werte trägst du unter „Stand" ein.
+        {misch !== undefined && ` Mischrendite über dein Vermögen: ${prozent(misch)}.`}
+      </p>
 
       <div className="mt-7">
         <Linienchart
@@ -863,9 +941,10 @@ function Prognosebereich({
       </div>
 
       <p className="mt-5 text-xs leading-relaxed text-tinte3">
-        Rechengrundlage: monatliche Einzahlung, Zinsen thesauriert, vor Kosten und Steuern.
-        Sachwerte und Schulden werden mit fortgeschrieben, obwohl sie sich in der Realität anders
-        entwickeln – prüf das Ergebnis mit Augenmaß.
+        Rechengrundlage: monatliche Einzahlung, Zinsen thesauriert, vor Kosten und Steuern. Jeder
+        Posten wächst mit seinem eigenen Zins. Schulden wachsen mit ihrem Kreditzins und schrumpfen
+        um die Tilgung; ist eine Schuld getilgt, wird die frei gewordene Rate hier nicht automatisch
+        weiterinvestiert – das wäre eine Annahme über dein Verhalten, keine Rechnung.
       </p>
     </section>
   );

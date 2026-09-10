@@ -61,6 +61,67 @@ export function sparplanVerlauf(
   return punkte;
 }
 
+/**
+ * Ein Baustein des Vermögens für die Fortschreibung.
+ * `zins` ist der jährliche Satz als Dezimalzahl, `rate` was monatlich zufließt
+ * (bei Schulden: die Tilgung).
+ */
+export type Baustein = { start: number; rate: number; zins: number; istSchuld?: boolean };
+
+export type Vermoegenspunkt = {
+  monat: number;
+  brutto: number;
+  schulden: number;
+  netto: number;
+  /** Startvermögen plus alle Einzahlungen – die Linie ohne jeden Zinseffekt. */
+  eingezahlt: number;
+};
+
+/**
+ * Monatliche Fortschreibung mit eigenem Zins je Baustein.
+ *
+ * Ein Girokonto verzinst sich nicht wie ein Welt-ETF. Über alles denselben Satz
+ * zu legen wäre bequem und deutlich zu optimistisch – deshalb rechnet jeder
+ * Posten mit seinem eigenen.
+ *
+ * Schulden wachsen mit ihrem Zins und schrumpfen um die Tilgung. Ist eine Schuld
+ * getilgt, wird die frei gewordene Rate NICHT automatisch investiert – das wäre
+ * eine Annahme über künftiges Verhalten, keine Rechnung.
+ */
+export function vermoegensverlauf(bausteine: Baustein[], monate: number): Vermoegenspunkt[] {
+  const stand = bausteine.map((b) => b.start);
+  let eingezahlt = bausteine.reduce((s, b) => s + (b.istSchuld ? -b.start : b.start), 0);
+
+  const punkte: Vermoegenspunkt[] = [];
+  const erfassen = (m: number) => {
+    let brutto = 0;
+    let schulden = 0;
+    bausteine.forEach((b, i) => {
+      if (b.istSchuld) schulden += stand[i];
+      else brutto += stand[i];
+    });
+    punkte.push({ monat: m, brutto, schulden, netto: brutto - schulden, eingezahlt });
+  };
+
+  erfassen(0);
+  for (let m = 1; m <= monate; m++) {
+    bausteine.forEach((b, i) => {
+      const wachstum = stand[i] * (1 + b.zins / MONATE_PRO_JAHR);
+      if (b.istSchuld) {
+        const neu = Math.max(0, wachstum - b.rate);
+        // Nur die tatsaechlich geleistete Tilgung zaehlt als Einzahlung.
+        eingezahlt += Math.min(b.rate, wachstum);
+        stand[i] = neu;
+      } else {
+        stand[i] = wachstum + b.rate;
+        eingezahlt += b.rate;
+      }
+    });
+    erfassen(m);
+  }
+  return punkte;
+}
+
 /** Notgroschen-Ziel als Vielfaches der Nettomonatsausgaben. */
 export function notgroschenZiel(monatsausgaben: number, monate = 4): number {
   return monatsausgaben * monate;

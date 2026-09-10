@@ -48,6 +48,23 @@ export type Posten = {
   kaufdatum?: string;
   /** Haltefrist-Timer für diesen Posten anzeigen. */
   haltefrist?: boolean;
+  /** Eigene Renditeannahme als Dezimalzahl. Leer = Vorgabe der Klasse. */
+  rendite?: number;
+};
+
+/**
+ * Vorgaben je Anlageklasse, wenn ein Posten keine eigene Annahme hat.
+ *
+ * Konten: 2,25 % – der EZB-Einlagenzins, den ein Tagesgeldkonto dauerhaft
+ * mitgeht. Ein Girokonto bringt nichts; dort gehört eine 0 in den Posten.
+ * Depots: die allgemeine Renditeannahme aus den Einstellungen (Vorgabe 7 %).
+ * Sachwerte und Schulden: keine Annahme, bis jemand eine einträgt.
+ */
+export const RENDITE_VORGABE: Record<PostenArt, number> = {
+  konto: 0.0225,
+  depot: 0.07,
+  sachwert: 0,
+  schuld: 0,
 };
 
 /** Ein festgehaltener Stand – daraus entsteht die Entwicklungskurve. */
@@ -169,7 +186,7 @@ export function vorlageKontensystem(): Daten {
 /** Startbelegung der Bilanz – die Struktur aus Kapitel 10, ohne Beträge. */
 export function vorlageBilanz(): Posten[] {
   return [
-    { id: id(), art: "konto", name: "Hauptkonto" },
+    { id: id(), art: "konto", name: "Hauptkonto", rendite: 0 },
     { id: id(), art: "konto", name: "Notgroschen" },
     { id: id(), art: "depot", name: "ETF", sollAnteil: 0.8 },
     { id: id(), art: "depot", name: "Krypto", sollAnteil: 0.1, haltefrist: true },

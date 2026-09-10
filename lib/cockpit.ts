@@ -7,17 +7,18 @@
  */
 
 import {
-  endkapitalSparplan,
+  type Baustein,
   haltefrist,
   notgroschenZiel,
   realerWert,
   rebalancing,
   STEUER,
   steuersatz,
+  vermoegensverlauf,
 } from "@/lib/finance";
 import { fortschritt, schnitt } from "@/lib/ausgaben";
 import { euro } from "@/lib/format";
-import type { Daten, Posten } from "@/lib/store";
+import { RENDITE_VORGABE, type Daten, type Posten } from "@/lib/store";
 
 // ─────────────────────────────────────────────────────────── Bilanz
 
@@ -73,6 +74,34 @@ export const REBALANCING_SCHWELLE = 0.05;
 
 // ─────────────────────────────────────────────────────────── Prognose
 
+/**
+ * Der Satz, mit dem ein Posten fortgeschrieben wird: eigene Annahme, sonst die
+ * Vorgabe der Klasse. Depots folgen der allgemeinen Renditeannahme, damit ein
+ * Regler alle Anlagen auf einmal verstellen kann.
+ */
+export function renditeVon(posten: Posten, daten: Daten): number {
+  if (posten.rendite !== undefined) return posten.rendite;
+  if (posten.art === "depot") return daten.einstellungen.renditeAnnahme;
+  return RENDITE_VORGABE[posten.art];
+}
+
+export function bausteine(daten: Daten): Baustein[] {
+  return daten.bilanz.map((p) => ({
+    start: p.wert ?? 0,
+    rate: p.sparrate ?? 0,
+    zins: renditeVon(p, daten),
+    istSchuld: p.art === "schuld",
+  }));
+}
+
+/** Mischrendite über das gesamte Vermögen – nur zur Anzeige. */
+export function mischrendite(daten: Daten): number | undefined {
+  const anlagen = daten.bilanz.filter((p) => p.art !== "schuld");
+  const summe = anlagen.reduce((s, p) => s + (p.wert ?? 0), 0);
+  if (summe <= 0) return undefined;
+  return anlagen.reduce((s, p) => s + (p.wert ?? 0) * renditeVon(p, daten), 0) / summe;
+}
+
 export type Prognosepunkt = {
   jahr: number;
   nominal: number;
@@ -82,32 +111,23 @@ export type Prognosepunkt = {
 
 export function prognose(daten: Daten, jahre?: number): Prognosepunkt[] {
   const j = jahre ?? daten.einstellungen.prognoseJahre ?? 20;
-  const start = summen(daten.bilanz).netto;
-  const rate = sparrateGesamt(daten.bilanz);
-  const zins = daten.einstellungen.renditeAnnahme;
   const inflation = daten.einstellungen.inflationAnnahme;
+  const verlauf = vermoegensverlauf(bausteine(daten), j * 12);
 
-  const punkte: Prognosepunkt[] = [];
   const schritt = j <= 10 ? 1 : j <= 25 ? 5 : 10;
-  for (let x = 0; x <= j; x += schritt) {
-    const nominal = endkapitalSparplan(rate, x, zins, start);
-    punkte.push({
+  const jahresliste: number[] = [];
+  for (let x = 0; x <= j; x += schritt) jahresliste.push(x);
+  if (jahresliste[jahresliste.length - 1] !== j) jahresliste.push(j);
+
+  return jahresliste.map((x) => {
+    const p = verlauf[x * 12];
+    return {
       jahr: x,
-      nominal,
-      real: realerWert(nominal, inflation, x),
-      eingezahlt: start + rate * 12 * x,
-    });
-  }
-  if (punkte[punkte.length - 1].jahr !== j) {
-    const nominal = endkapitalSparplan(rate, j, zins, start);
-    punkte.push({
-      jahr: j,
-      nominal,
-      real: realerWert(nominal, inflation, j),
-      eingezahlt: start + rate * 12 * j,
-    });
-  }
-  return punkte;
+      nominal: p.netto,
+      real: realerWert(p.netto, inflation, x),
+      eingezahlt: p.eingezahlt,
+    };
+  });
 }
 
 // ─────────────────────────────────────────────────────────── Notgroschen
