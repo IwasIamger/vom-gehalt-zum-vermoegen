@@ -7,7 +7,10 @@
   --color-flaeche: #ffffff;
   --color-tinte: #16211e;
   --color-tinte2: #5a6763;
-  --color-tinte3: #8b9793;
+  /* Gemessen statt geschaetzt: #8b9793 kam auf 2,9:1 gegen Papier und war
+     damit unter der Lesbarkeitsnorm – und dieser Ton traegt fast alle
+     Hilfstexte. #6e7774 haelt den Farbton und erreicht 4,6:1. */
+  --color-tinte3: #6e7774;
   --color-linie: #e1e5e2;
   --color-linie2: #c4cec9;
 
@@ -20,7 +23,9 @@
   --color-rot: #c8322f;
   --color-rot-tief: #a5241f;
   --color-rot-hell: #fcefee;
-  --color-gold: #a8792c;
+  /* Gold traegt Text auf hellem Grund und Weiss auf farbigem Grund. Der
+     Druckton #a8792c schaffte beides nicht (3,7 bzw. 3,9:1). */
+  --color-gold: #966c27;
   --color-gold-hell: #fdfaf3;
   --color-dunkel: #0f1a17;
   --color-dunkel2: #1a2a25;
