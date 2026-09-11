@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { rechnerNach } from "@/lib/rechner";
 import { ladeMarktdaten } from "@/lib/marktdaten";
+import Linienchart from "@/components/Linienchart";
 
 const TON: Record<string, string> = {
   gruen: "text-gruen",
@@ -51,6 +52,14 @@ export default function Rechner({ slug }: { slug: string }) {
       return def.rechne(werte);
     } catch {
       return [];
+    }
+  }, [def, werte]);
+
+  const verlauf = useMemo(() => {
+    try {
+      return def.verlauf?.(werte);
+    } catch {
+      return undefined;
     }
   }, [def, werte]);
 
@@ -141,6 +150,27 @@ export default function Rechner({ slug }: { slug: string }) {
           </dl>
         </section>
       </div>
+
+      {verlauf && (
+        <section className="mt-6 rounded-xl border border-linie bg-flaeche p-6">
+          <p className="eyebrow mb-4 text-tinte3">Entwicklung über die Jahre</p>
+          <Linienchart labels={verlauf.labels} reihen={verlauf.reihen} />
+          <ul className="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-sm text-tinte2">
+            {verlauf.reihen.map((r) => (
+              <li key={r.name} className="flex items-center gap-2">
+                <span
+                  className="w-5"
+                  style={{
+                    borderTop: `2px ${r.gestrichelt ? "dashed" : "solid"} ${r.farbe}`,
+                  }}
+                  aria-hidden
+                />
+                {r.name}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {def.fussnote && (
         <p className="mt-6 text-xs leading-relaxed text-tinte3">{def.fussnote}</p>

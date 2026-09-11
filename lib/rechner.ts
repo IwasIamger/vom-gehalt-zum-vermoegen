@@ -5,6 +5,7 @@ import {
   realerWert,
   realeRendite,
   savebackEffekt,
+  savebackMonatlich,
   sparplanAufteilung,
   SAVEBACK,
 } from "./finance";
@@ -31,6 +32,17 @@ export type Ergebnis = {
   hinweis?: string;
 };
 
+/** Eine Linie im Verlaufsdiagramm. Farben als CSS-Variablen, damit das Modul ohne React bleibt. */
+export type Verlaufsreihe = {
+  name: string;
+  farbe: string;
+  werte: number[];
+  gestrichelt?: boolean;
+  flaeche?: boolean;
+};
+
+export type Verlauf = { labels: string[]; reihen: Verlaufsreihe[] };
+
 export type RechnerDef = {
   slug: string;
   titel: string;
@@ -38,8 +50,17 @@ export type RechnerDef = {
   einleitung: string;
   felder: Feld[];
   rechne: (v: Record<string, number>) => Ergebnis[];
+  /** Optional: die Entwicklung über die Jahre – Zahlen kann man lesen, Kurven versteht man. */
+  verlauf?: (v: Record<string, number>) => Verlauf;
   fussnote?: string;
 };
+
+/** Jahresweise Stützpunkte von 0 bis `jahre`, Beschriftung „heute", „+5", … */
+function jahresachse(jahre: number): { jahre: number[]; labels: string[] } {
+  const n = Math.max(1, Math.round(jahre));
+  const liste = Array.from({ length: n + 1 }, (_, i) => i);
+  return { jahre: liste, labels: liste.map((j) => (j === 0 ? "heute" : `+${j}`)) };
+}
 
 /** Deutsche Schreibweise fuer Zahlen, die in Fliesstext landen. */
 const zahl = (n: number) => n.toLocaleString("de-DE", { maximumFractionDigits: 2 });
@@ -180,6 +201,34 @@ export const RECHNER: RechnerDef[] = [
         },
       ];
     },
+    verlauf: (v) => {
+      const { jahre, labels } = jahresachse(v.jahre);
+      return {
+        labels,
+        reihen: [
+          {
+            name: "Depotwert",
+            farbe: "var(--color-gruen)",
+            flaeche: true,
+            werte: jahre.map((j) => endkapitalSparplan(v.rate, j, v.rendite / 100, v.start)),
+          },
+          {
+            name: "Kaufkraft von heute",
+            farbe: "var(--color-gold)",
+            gestrichelt: true,
+            werte: jahre.map((j) =>
+              endkapitalSparplan(v.rate, j, realeRendite(v.rendite / 100, 0.02), v.start),
+            ),
+          },
+          {
+            name: "Eingezahlt",
+            farbe: "var(--color-tinte3)",
+            gestrichelt: true,
+            werte: jahre.map((j) => v.start + v.rate * 12 * j),
+          },
+        ],
+      };
+    },
     fussnote: "Monatliche Einzahlung, Zinsen werden wieder angelegt. Vor Kosten und Steuern.",
   },
   {
@@ -228,6 +277,23 @@ export const RECHNER: RechnerDef[] = [
         },
       ];
     },
+    verlauf: (v) => {
+      const { jahre, labels } = jahresachse(v.jahre);
+      const proMonat = v.rate >= SAVEBACK.mindestSparplan ? savebackMonatlich(v.umsatz) : 0;
+      const ohne = jahre.map((j) => endkapitalSparplan(v.rate, j, v.rendite / 100));
+      return {
+        labels,
+        reihen: [
+          {
+            name: "Mit Saveback",
+            farbe: "var(--color-gold)",
+            flaeche: true,
+            werte: jahre.map((j, i) => ohne[i] + endkapitalSparplan(proMonat, j, v.rendite / 100)),
+          },
+          { name: "Nur Sparplan", farbe: "var(--color-gruen)", werte: ohne },
+        ],
+      };
+    },
     fussnote:
       "Saveback: 1 % je Kartenzahlung, höchstens 15 € pro Monat, Voraussetzung ist ein laufender Sparplan ab 50 €. Stand 09/2026.",
   },
@@ -256,6 +322,31 @@ export const RECHNER: RechnerDef[] = [
           hinweis: "Gleiche Einzahlung, gleiche Marktrendite – nur die Kosten unterscheiden sich.",
         },
       ];
+    },
+    verlauf: (v) => {
+      const { jahre, labels } = jahresachse(v.jahre);
+      return {
+        labels,
+        reihen: [
+          {
+            name: `${zahl(v.terA)} % Kosten`,
+            farbe: "var(--color-gruen)",
+            flaeche: true,
+            werte: jahre.map((j) => endkapitalSparplan(v.rate, j, (v.brutto - v.terA) / 100)),
+          },
+          {
+            name: `${zahl(v.terB)} % Kosten`,
+            farbe: "var(--color-rot)",
+            werte: jahre.map((j) => endkapitalSparplan(v.rate, j, (v.brutto - v.terB) / 100)),
+          },
+          {
+            name: "Eingezahlt",
+            farbe: "var(--color-tinte3)",
+            gestrichelt: true,
+            werte: jahre.map((j) => v.rate * 12 * j),
+          },
+        ],
+      };
     },
   },
   {

@@ -290,3 +290,32 @@ export function aufgaben(daten: Daten): Aufgabe[] {
 
   return liste;
 }
+
+// ─────────────────────────────────────────────────────────── Momentaufnahme
+
+/**
+ * Einmal im Monat den Stand festhalten – von selbst.
+ *
+ * Die Entwicklungskurve lebt von regelmäßigen Punkten, und "einmal im Monat
+ * auf einen Knopf drücken" vergisst jeder. Deshalb hält das Cockpit beim
+ * ersten Öffnen in einem neuen Monat den Stand automatisch fest – aber nur,
+ * wenn überhaupt Beträge da sind, und ohne einen von Hand gesetzten Punkt
+ * desselben Monats zu überschreiben.
+ */
+export function mitMonatsaufnahme(daten: Daten, heute = new Date()): Daten {
+  const hatWerte = daten.bilanz.some((p) => (p.wert ?? 0) !== 0);
+  if (!hatWerte) return daten;
+  const monat = heute.toISOString().slice(0, 7);
+  if (daten.verlauf.some((v) => v.datum.startsWith(monat))) return daten;
+  const s = summen(daten.bilanz);
+  const eintrag = {
+    datum: heute.toISOString().slice(0, 10),
+    gesamt: s.netto,
+    anlagen: s.anlagen,
+    schulden: s.schulden,
+  };
+  return {
+    ...daten,
+    verlauf: [...daten.verlauf, eintrag].sort((a, b) => a.datum.localeCompare(b.datum)),
+  };
+}

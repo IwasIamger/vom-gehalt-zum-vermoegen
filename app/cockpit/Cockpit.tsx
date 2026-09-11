@@ -12,6 +12,7 @@ import {
   notgroschen,
   pauschbetrag,
   mischrendite,
+  mitMonatsaufnahme,
   prognose,
   renditeVon,
   sollIst,
@@ -62,7 +63,8 @@ export default function Cockpit() {
   const dateiRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    setDaten(laden());
+    // Beim ersten Öffnen im Monat wandert der Stand von selbst in die Kurve.
+    setDaten(mitMonatsaufnahme(laden()));
     setBereit(true);
   }, []);
 
@@ -343,8 +345,9 @@ export default function Cockpit() {
               </button>
             </div>
             <p className="mt-2 max-w-2xl text-sm leading-relaxed text-tinte2">
-              Jeder festgehaltene Stand ist ein Punkt auf der Kurve. Einmal im Monat genügt – dann
-              wird nach einem Jahr sichtbar, was sonst nur gefühlt ist.
+              Jeder festgehaltene Stand ist ein Punkt auf der Kurve. Beim ersten Öffnen im Monat
+              passiert das von selbst; zwischendurch kannst du jederzeit einen Punkt setzen. Nach
+              einem Jahr wird sichtbar, was sonst nur gefühlt ist.
             </p>
             <div className="mt-6">
               {daten.verlauf.length < 2 ? (

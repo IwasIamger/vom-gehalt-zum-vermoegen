@@ -4,6 +4,7 @@ import {
   aufgaben,
   bausteine,
   mischrendite,
+  mitMonatsaufnahme,
   notgroschen,
   pauschbetrag,
   prognose,
@@ -351,5 +352,38 @@ describe("aufgaben", () => {
   it("übersteht einen völlig leeren Stand", () => {
     expect(() => aufgaben(LEER)).not.toThrow();
     expect(aufgaben(LEER).every((a) => typeof a.text === "string" && a.text.length > 0)).toBe(true);
+  });
+});
+
+describe("mitMonatsaufnahme", () => {
+  const heute = new Date("2026-09-11T12:00:00Z");
+
+  it("setzt beim ersten Öffnen im Monat einen Punkt", () => {
+    const d = mitMonatsaufnahme(stand(), heute);
+    expect(d.verlauf).toHaveLength(1);
+    expect(d.verlauf[0].datum).toBe("2026-09-11");
+    expect(d.verlauf[0].gesamt).toBe(summen(stand().bilanz).netto);
+  });
+
+  it("setzt im selben Monat keinen zweiten", () => {
+    const einmal = mitMonatsaufnahme(stand(), heute);
+    const zweimal = mitMonatsaufnahme(einmal, new Date("2026-09-25T12:00:00Z"));
+    expect(zweimal.verlauf).toHaveLength(1);
+  });
+
+  it("überschreibt keinen von Hand gesetzten Punkt des Monats", () => {
+    const manuell = stand({ verlauf: [{ datum: "2026-09-03", gesamt: 1, anlagen: 1, schulden: 0 }] });
+    expect(mitMonatsaufnahme(manuell, heute).verlauf).toEqual(manuell.verlauf);
+  });
+
+  it("ergänzt den Folgemonat", () => {
+    const sep = mitMonatsaufnahme(stand(), heute);
+    const okt = mitMonatsaufnahme(sep, new Date("2026-10-01T09:00:00Z"));
+    expect(okt.verlauf.map((v) => v.datum)).toEqual(["2026-09-11", "2026-10-01"]);
+  });
+
+  it("hält keinen leeren Stand fest", () => {
+    expect(mitMonatsaufnahme(stand({ bilanz: [] }), heute).verlauf).toEqual([]);
+    expect(mitMonatsaufnahme(LEER, heute)).toBe(LEER);
   });
 });
