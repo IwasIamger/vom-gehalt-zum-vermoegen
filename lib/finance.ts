@@ -227,8 +227,14 @@ export function steuersatz(kirchensteuer = 0, teilfreistellung = 0): number {
 /** Steuer auf einen Ertrag, Pauschbetrag wird angerechnet. */
 export function kapitalertragsteuer(
   ertrag: number,
-  { kirchensteuer = 0, teilfreistellung = 0, pauschbetragRest = STEUER.sparerpauschbetrag } = {},
+  optionen: { kirchensteuer?: number; teilfreistellung?: number; pauschbetragRest?: number } = {},
 ) {
+  const {
+    kirchensteuer = 0,
+    teilfreistellung = 0,
+    // STEUER ist `as const`, der Vorgabewert waere sonst auf 1000 festgenagelt.
+    pauschbetragRest = STEUER.sparerpauschbetrag as number,
+  } = optionen;
   const steuerpflichtig = Math.max(0, ertrag * (1 - teilfreistellung) - pauschbetragRest);
   // Teilfreistellung steckt schon im steuerpflichtigen Betrag – hier nur der Satz.
   const satz = steuersatz(kirchensteuer);
