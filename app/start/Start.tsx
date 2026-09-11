@@ -70,7 +70,10 @@ export default function Start() {
   const su = useMemo(() => summen(daten.bilanz), [daten.bilanz]);
   const rate = useMemo(() => sparrateGesamt(daten.bilanz), [daten.bilanz]);
   const ng = useMemo(() => notgroschen(daten), [daten]);
-  const sch = useMemo(() => schnitt(daten.ausgaben), [daten.ausgaben]);
+  const sch = useMemo(
+    () => schnitt(daten.ausgaben, daten.dauerausgaben),
+    [daten.ausgaben, daten.dauerausgaben],
+  );
   const offen = useMemo(
     () => aufgaben(daten).filter((a) => !a.erfuellt && !daten.erledigt.includes(a.id)),
     [daten],

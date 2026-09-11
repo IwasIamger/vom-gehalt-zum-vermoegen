@@ -108,6 +108,7 @@ describe("importieren – alte Stände", () => {
     };
     const d = importieren(JSON.stringify(v2))!;
     expect(d.ausgaben).toEqual([]);
+    expect(d.dauerausgaben).toEqual([]);
     expect(d.hinweise).toEqual([]);
     expect(d.kategorien.length).toBeGreaterThan(0);
     expect(d.einstellungen.prognoseJahre).toBeGreaterThan(0);
@@ -156,6 +157,9 @@ describe("Export und Import", () => {
       ],
       verlauf: [{ datum: "2026-08-01", gesamt: 5000, anlagen: 4000, schulden: 8000 }],
       ausgaben: [{ id: "a", datum: "2026-08-05", betrag: 24.9, kategorie: "Freizeit", notiz: "Kino" }],
+      dauerausgaben: [
+        { id: "d", name: "Miete", betrag: 820, kategorie: "Fixkosten", rhythmus: 1, ab: "2026-01" },
+      ],
       kategorien: ["Freizeit", "Sonstiges"],
       hinweise: [
         { id: "h", datum: "2026-08-06T10:00:00Z", art: "fehler", seite: "/cockpit/", text: "Test" },

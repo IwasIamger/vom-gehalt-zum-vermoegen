@@ -8,7 +8,7 @@
 
 const KEY = "finanzcockpit.v1";
 
-export const VERSION = 4 as const;
+export const VERSION = 5 as const;
 
 export type Konto = {
   id: string;
@@ -85,6 +85,26 @@ export type Ausgabe = {
   notiz?: string;
 };
 
+/**
+ * Eine Ausgabe, die jeden Monat wiederkehrt.
+ *
+ * Miete, Versicherung, Abo: Wer die jeden Monat neu tippt, hört nach drei
+ * Wochen auf – und drei Monate sind die Kernübung. Einmal eintragen reicht;
+ * die Auswertung rechnet sie für jeden Monat mit.
+ */
+export type Dauerausgabe = {
+  id: string;
+  name: string;
+  betrag: number;
+  kategorie: string;
+  /** Alle wie viele Monate? 1 = monatlich, 3 = quartalsweise, 12 = jährlich. */
+  rhythmus: number;
+  /** Monat des ersten Fälligwerdens, jjjj-mm. Davor wird nichts gerechnet. */
+  ab: string;
+  /** Letzter Monat, jjjj-mm. Leer heißt: läuft weiter. */
+  bis?: string;
+};
+
 /** Vorgabe nach dem Kontensystem – jederzeit erweiterbar. */
 export const KATEGORIEN_START = [
   "Täglicher Bedarf",
@@ -130,6 +150,7 @@ export type Daten = {
   bilanz: Posten[];
   verlauf: Momentaufnahme[];
   ausgaben: Ausgabe[];
+  dauerausgaben: Dauerausgabe[];
   kategorien: string[];
   hinweise: Hinweis[];
   /** IDs abgehakter Aufgaben. Die Liste selbst wird abgeleitet, nicht gespeichert. */
@@ -154,6 +175,7 @@ export const LEER: Daten = {
   bilanz: [],
   verlauf: [],
   ausgaben: [],
+  dauerausgaben: [],
   kategorien: KATEGORIEN_START,
   hinweise: [],
   erledigt: [],
@@ -209,6 +231,17 @@ export function vorlageBilanz(): Posten[] {
     { id: id(), art: "depot", name: "Krypto", sollAnteil: 0.1, haltefrist: true },
     { id: id(), art: "depot", name: "P2P", sollAnteil: 0.1 },
   ];
+}
+
+export function neueDauerausgabe(kategorie: string): Dauerausgabe {
+  return {
+    id: id(),
+    name: "",
+    betrag: 0,
+    kategorie,
+    rhythmus: 1,
+    ab: new Date().toISOString().slice(0, 7),
+  };
 }
 
 export function neuerHinweis(art: Hinweis["art"], text: string, seite?: string): Hinweis {
@@ -288,6 +321,7 @@ function migriere(roh: unknown): Daten | null {
     bilanz,
     verlauf: d.verlauf ?? [],
     ausgaben: d.ausgaben ?? [],
+    dauerausgaben: d.dauerausgaben ?? [],
     kategorien: d.kategorien?.length ? d.kategorien : KATEGORIEN_START,
     hinweise: d.hinweise ?? [],
     erledigt: d.erledigt ?? [],

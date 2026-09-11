@@ -189,8 +189,8 @@ export function aufgaben(daten: Daten): Aufgabe[] {
   const pb = pauschbetrag(daten);
   const rate = sparrateGesamt(daten.bilanz);
   const schulden = daten.bilanz.filter((p) => p.art === "schuld" && (p.wert ?? 0) > 0);
-  const fs = fortschritt(daten.ausgaben);
-  const sch = schnitt(daten.ausgaben);
+  const fs = fortschritt(daten.ausgaben, daten.dauerausgaben);
+  const sch = schnitt(daten.ausgaben, daten.dauerausgaben);
 
   const liste: Aufgabe[] = [
     {

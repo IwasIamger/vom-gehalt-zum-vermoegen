@@ -12,7 +12,15 @@ import {
   proTag,
   schnitt,
 } from "@/lib/ausgaben";
-import { type Ausgabe, type Daten, LEER, laden, speichern } from "@/lib/store";
+import {
+  type Ausgabe,
+  type Daten,
+  type Dauerausgabe,
+  LEER,
+  laden,
+  neueDauerausgabe,
+  speichern,
+} from "@/lib/store";
 
 export default function Ausgaben() {
   const [daten, setDaten] = useState<Daten>(LEER);
@@ -38,10 +46,23 @@ export default function Ausgaben() {
     if (bereit) speichern(daten);
   }, [daten, bereit]);
 
-  const monate = useMemo(() => proMonat(daten.ausgaben), [daten.ausgaben]);
-  const sch = useMemo(() => schnitt(daten.ausgaben), [daten.ausgaben]);
-  const fs = useMemo(() => fortschritt(daten.ausgaben), [daten.ausgaben]);
+  const monate = useMemo(
+    () => proMonat(daten.ausgaben, daten.dauerausgaben),
+    [daten.ausgaben, daten.dauerausgaben],
+  );
+  const sch = useMemo(
+    () => schnitt(daten.ausgaben, daten.dauerausgaben),
+    [daten.ausgaben, daten.dauerausgaben],
+  );
+  const fs = useMemo(
+    () => fortschritt(daten.ausgaben, daten.dauerausgaben),
+    [daten.ausgaben, daten.dauerausgaben],
+  );
   const tage = useMemo(() => proTag(daten.ausgaben), [daten.ausgaben]);
+  const monatlichFest = useMemo(
+    () => daten.dauerausgaben.filter((x) => x.rhythmus === 1).reduce((s, x) => s + x.betrag, 0),
+    [daten.dauerausgaben],
+  );
 
   const [gewaehlt, setGewaehlt] = useState<string>("");
   const [alleZeigen, setAlleZeigen] = useState(false);
@@ -72,6 +93,17 @@ export default function Ausgaben() {
 
   function entferne(id: string) {
     setDaten((d) => ({ ...d, ausgaben: d.ausgaben.filter((a) => a.id !== id) }));
+  }
+
+  function festeAendern(id: string, feld: keyof Dauerausgabe, wert: unknown) {
+    setDaten((d) => ({
+      ...d,
+      dauerausgaben: d.dauerausgaben.map((x) => (x.id === id ? { ...x, [feld]: wert } : x)),
+    }));
+  }
+
+  function festeEntfernen(id: string) {
+    setDaten((d) => ({ ...d, dauerausgaben: d.dauerausgaben.filter((x) => x.id !== id) }));
   }
 
   function kategorieErgaenzen() {
@@ -222,6 +254,129 @@ export default function Ausgaben() {
         </p>
       </section>
 
+      {/* Feste Ausgaben */}
+      <section className="mt-6 rounded-xl border border-linie bg-flaeche p-6">
+        <div className="flex flex-wrap items-baseline justify-between gap-3">
+          <h2 className="text-xl">Feste Ausgaben</h2>
+          {monatlichFest > 0 && (
+            <p className="tabular text-sm text-tinte2">{euro(monatlichFest)} monatlich</p>
+          )}
+        </div>
+        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-tinte2">
+          Miete, Versicherungen, Abos: einmal eintragen statt jeden Monat neu. Sie z&auml;hlen in
+          jedem f&auml;lligen Monat mit &ndash; ein Jahresbeitrag aber nur in dem Monat, in dem er
+          tats&auml;chlich abgeht. Die Nettomonatsausgaben sollen zeigen, was wirklich abflie&szlig;t.
+        </p>
+
+        {daten.dauerausgaben.length > 0 && (
+          <ul className="mt-6 space-y-3">
+            {daten.dauerausgaben.map((f) => (
+              <li key={f.id} className="rounded-xl border border-linie bg-papier p-4">
+                <div className="grid gap-3 md:grid-cols-[1.4fr_1fr_1fr_auto] md:items-end">
+                  <label className="block">
+                    <span className="eyebrow mb-1.5 block text-tinte3">Name</span>
+                    <input
+                      value={f.name}
+                      onChange={(e) => festeAendern(f.id, "name", e.target.value)}
+                      placeholder="z. B. Miete"
+                      className="w-full rounded-md border border-linie2 bg-flaeche px-3 py-2 outline-none focus:border-gruen"
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="eyebrow mb-1.5 block text-tinte3">Betrag</span>
+                    <span className="flex items-center gap-2 rounded-md border border-linie2 bg-flaeche px-3 py-2 focus-within:border-gruen">
+                      <input
+                        inputMode="decimal"
+                        defaultValue={f.betrag ? String(f.betrag).replace(".", ",") : ""}
+                        placeholder="0"
+                        onChange={(e) =>
+                          festeAendern(f.id, "betrag", zahlAusEingabe(e.target.value) ?? 0)
+                        }
+                        aria-label="Betrag"
+                        className="tabular w-full bg-transparent text-right outline-none"
+                      />
+                      <span className="shrink-0 text-xs text-tinte3">&euro;</span>
+                    </span>
+                  </label>
+                  <label className="block">
+                    <span className="eyebrow mb-1.5 block text-tinte3">Rhythmus</span>
+                    <select
+                      value={f.rhythmus}
+                      onChange={(e) => festeAendern(f.id, "rhythmus", Number(e.target.value))}
+                      className="w-full rounded-md border border-linie2 bg-flaeche px-3 py-2 outline-none focus:border-gruen"
+                    >
+                      <option value={1}>monatlich</option>
+                      <option value={3}>alle 3 Monate</option>
+                      <option value={6}>halbj&auml;hrlich</option>
+                      <option value={12}>j&auml;hrlich</option>
+                    </select>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => festeEntfernen(f.id)}
+                    aria-label={`${f.name || "Posten"} entfernen`}
+                    className="h-10 shrink-0 justify-self-end rounded-md border border-linie2 px-3 text-sm text-tinte3 transition-colors hover:border-rot hover:text-rot"
+                  >
+                    Entfernen
+                  </button>
+                </div>
+
+                <div className="mt-3 grid gap-3 border-t border-linie pt-3 md:grid-cols-3 md:items-end">
+                  <label className="block">
+                    <span className="eyebrow mb-1.5 block text-tinte3">Kategorie</span>
+                    <select
+                      value={f.kategorie}
+                      onChange={(e) => festeAendern(f.id, "kategorie", e.target.value)}
+                      className="w-full rounded-md border border-linie2 bg-flaeche px-3 py-2 outline-none focus:border-gruen"
+                    >
+                      {daten.kategorien.map((k) => (
+                        <option key={k} value={k}>
+                          {k}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="block">
+                    <span className="eyebrow mb-1.5 block text-tinte3">Erstmals f&auml;llig</span>
+                    <input
+                      type="month"
+                      value={f.ab}
+                      onChange={(e) => festeAendern(f.id, "ab", e.target.value)}
+                      className="w-full rounded-md border border-linie2 bg-flaeche px-3 py-2 outline-none focus:border-gruen"
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="eyebrow mb-1.5 block text-tinte3">L&auml;uft bis (optional)</span>
+                    <input
+                      type="month"
+                      value={f.bis ?? ""}
+                      onChange={(e) => festeAendern(f.id, "bis", e.target.value || undefined)}
+                      className="w-full rounded-md border border-linie2 bg-flaeche px-3 py-2 outline-none focus:border-gruen"
+                    />
+                  </label>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        <button
+          type="button"
+          onClick={() =>
+            setDaten((d) => ({
+              ...d,
+              dauerausgaben: [
+                ...d.dauerausgaben,
+                neueDauerausgabe(d.kategorien[1] ?? d.kategorien[0] ?? "Fixkosten"),
+              ],
+            }))
+          }
+          className="mt-5 rounded-lg border border-linie2 px-5 py-2.5 text-sm font-semibold text-tinte transition-colors hover:border-gruen hover:text-gruen"
+        >
+          + Feste Ausgabe
+        </button>
+      </section>
+
       {/* ───────────────────────────── Fortschritt */}
       <section className="mt-6 rounded-xl border border-linie bg-flaeche p-6">
         <div className="flex flex-wrap items-baseline justify-between gap-3">
@@ -230,6 +385,8 @@ export default function Ausgaben() {
             <p className="text-sm text-tinte3">
               seit {fdatum(fs.seit)} · {plural(fs.tage, "Tag", "Tage")} ·{" "}
               {plural(daten.ausgaben.length, "Eintrag", "Einträge")}
+              {daten.dauerausgaben.length > 0 &&
+                ` · ${plural(daten.dauerausgaben.length, "fester Posten", "feste Posten")}`}
             </p>
           )}
         </div>
@@ -418,7 +575,7 @@ export default function Ausgaben() {
         </section>
       )}
 
-      {daten.ausgaben.length === 0 && (
+      {daten.ausgaben.length === 0 && daten.dauerausgaben.length === 0 && (
         <section className="mt-6 rounded-xl border border-gold/50 bg-gold-hell p-6">
           <p className="font-serif text-lg font-bold text-gold">Noch kein Eintrag</p>
           <p className="mt-2 max-w-2xl text-sm leading-relaxed text-tinte2">
