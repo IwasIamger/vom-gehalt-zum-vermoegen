@@ -53,8 +53,8 @@ export default function Rechner({ slug }: { slug: string }) {
               const schritt = f.schritt ?? 1;
               return (
                 <div key={f.key}>
-                  <div className="flex items-baseline justify-between gap-3">
-                    <label htmlFor={f.key} className="text-sm font-medium text-tinte">
+                  <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-2">
+                    <label htmlFor={f.key} className="min-w-0 text-sm font-medium text-tinte">
                       {f.label}
                     </label>
                     <div className="flex items-baseline gap-1.5">
@@ -69,9 +69,9 @@ export default function Rechner({ slug }: { slug: string }) {
                         onChange={(e) =>
                           setWerte((w) => ({ ...w, [f.key]: Number(e.target.value) || 0 }))
                         }
-                        className="tabular w-28 rounded-md border border-linie2 bg-papier px-2.5 py-1.5 text-right font-serif text-lg font-bold outline-none focus:border-gruen"
+                        className="tabular w-24 rounded-md border border-linie2 bg-papier px-2.5 py-1.5 text-right font-serif text-lg font-bold outline-none focus:border-gruen sm:w-28"
                       />
-                      <span className="w-11 text-xs text-tinte3">{einheit(f.art)}</span>
+                      <span className="w-10 shrink-0 text-xs text-tinte3">{einheit(f.art)}</span>
                     </div>
                   </div>
                   <input

@@ -76,8 +76,24 @@ export default function Start() {
     [daten],
   );
 
+  const kopf = (
+    <header>
+      <p className="eyebrow text-gruen">Einstieg</p>
+      <h1 className="mt-2.5 text-3xl sm:text-4xl">In fünf Minuten startklar</h1>
+      <p className="mt-4 leading-relaxed text-tinte2">
+        Fünf Fragen. Was du beantwortest, wird sofort gespeichert – du kannst jederzeit aufhören
+        und später weitermachen. Nichts davon verlässt dein Gerät.
+      </p>
+    </header>
+  );
+
   if (!bereit) {
-    return <div className="mx-auto max-w-3xl px-5 py-20 text-tinte3">Lade deine Daten …</div>;
+    return (
+      <div className="mx-auto max-w-3xl px-5 py-10">
+        {kopf}
+        <p className="mt-8 text-tinte3">Lädt …</p>
+      </div>
+    );
   }
 
   const hat = (art: PostenArt, name: string) =>
@@ -126,14 +142,7 @@ export default function Start() {
 
   return (
     <div className="mx-auto max-w-3xl px-5 py-10">
-      <header>
-        <p className="eyebrow text-gruen">Einstieg</p>
-        <h1 className="mt-2.5 text-3xl sm:text-4xl">In fünf Minuten startklar</h1>
-        <p className="mt-4 leading-relaxed text-tinte2">
-          Fünf Fragen. Was du beantwortest, wird sofort gespeichert – du kannst jederzeit aufhören
-          und später weitermachen. Nichts davon verlässt dein Gerät.
-        </p>
-      </header>
+      {kopf}
 
       {/* Fortschritt */}
       <nav className="kein-druck mt-8" aria-label="Fortschritt">

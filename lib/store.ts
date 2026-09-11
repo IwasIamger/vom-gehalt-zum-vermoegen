@@ -296,21 +296,62 @@ function migriere(roh: unknown): Daten | null {
   };
 }
 
+/** Wohin unlesbare Stände wandern, statt gelöscht zu werden. */
+const KEY_KAPUTT = "finanzcockpit.beschaedigt";
+
 export function laden(): Daten {
   if (typeof window === "undefined") return LEER;
+  let roh: string | null = null;
   try {
-    const roh = window.localStorage.getItem(KEY);
+    roh = window.localStorage.getItem(KEY);
     if (!roh) return LEER;
-    return migriere(JSON.parse(roh)) ?? LEER;
+    const d = migriere(JSON.parse(roh));
+    if (d) return d;
   } catch {
-    return LEER;
+    // faellt unten in die Rettung
+  }
+  // Lieber aufheben als wegwerfen: Ein unlesbarer Stand ist immer noch der
+  // einzige Stand, den der Nutzer hat - vielleicht laesst er sich retten.
+  try {
+    if (roh) window.localStorage.setItem(KEY_KAPUTT, roh);
+  } catch {
+    /* dann eben nicht */
+  }
+  return LEER;
+}
+
+/** Liegt ein unlesbarer Stand in der Ablage? Für einen Hinweis an den Nutzer. */
+export function beschaedigterStand(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return window.localStorage.getItem(KEY_KAPUTT);
+  } catch {
+    return null;
   }
 }
 
-export function speichern(daten: Daten): void {
-  if (typeof window === "undefined") return;
+export function beschaedigtenStandVerwerfen(): void {
+  try {
+    window.localStorage.removeItem(KEY_KAPUTT);
+  } catch {
+    /* egal */
+  }
+}
+
+/**
+ * Speichern kann fehlschlagen: volle Ablage, privater Modus, gesperrte Cookies.
+ * Dann soll die App weiterlaufen und der Aufrufer es erfahren, statt dass ein
+ * Klick unbemerkt ins Leere geht.
+ */
+export function speichern(daten: Daten): boolean {
+  if (typeof window === "undefined") return false;
   const mitStempel = { ...daten, aktualisiert: new Date().toISOString() };
-  window.localStorage.setItem(KEY, JSON.stringify(mitStempel));
+  try {
+    window.localStorage.setItem(KEY, JSON.stringify(mitStempel));
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export function loeschen(): void {

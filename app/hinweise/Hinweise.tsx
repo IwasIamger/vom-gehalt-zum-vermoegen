@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import Sicherheitsknopf from "@/components/Sicherheitsknopf";
 import { type Daten, type Hinweis, LEER, laden, speichern } from "@/lib/store";
 
 const ART: Record<Hinweis["art"], { label: string; farbe: string; flaeche: string }> = {
@@ -34,6 +35,7 @@ export default function Hinweise() {
   const [bereit, setBereit] = useState(false);
   const [filter, setFilter] = useState<"alle" | Hinweis["art"]>("alle");
   const [kopiert, setKopiert] = useState(false);
+  const [meldung, setMeldung] = useState<string | null>(null);
 
   useEffect(() => {
     setDaten(laden());
@@ -71,7 +73,7 @@ export default function Hinweise() {
       setKopiert(true);
       window.setTimeout(() => setKopiert(false), 2500);
     } catch {
-      alert("Kopieren hat nicht geklappt. Nutz stattdessen „Als Datei sichern“.");
+      setMeldung("Kopieren hat nicht geklappt. Nutz stattdessen „Als Datei sichern“.");
     }
   }
 
@@ -85,24 +87,33 @@ export default function Hinweise() {
     URL.revokeObjectURL(url);
   }
 
+  const kopf = (
+    <header>
+      <p className="eyebrow text-gruen">Anmerkungen</p>
+      <h1 className="mt-2.5 text-3xl sm:text-4xl">Was dir aufgefallen ist</h1>
+      <p className="mt-4 leading-relaxed text-tinte2">
+        Der Stift unten rechts notiert von jeder Seite aus – samt der Seite, auf der du gerade
+        warst. Hier stehen die Notizen zum Durchgehen und Weitergeben.
+      </p>
+      <p className="mt-3 text-sm text-tinte3">
+        Die Liste liegt in deinem Browser. Sie wird nirgends automatisch verschickt: Zum
+        Weitergeben kopierst du sie oder lädst sie als Datei herunter.
+      </p>
+    </header>
+  );
+
   if (!bereit) {
-    return <div className="mx-auto max-w-3xl px-5 py-20 text-tinte3">Lade deine Daten …</div>;
+    return (
+      <div className="mx-auto max-w-3xl px-5 py-10">
+        {kopf}
+        <p className="mt-8 text-tinte3">Lädt …</p>
+      </div>
+    );
   }
 
   return (
     <div className="mx-auto max-w-3xl px-5 py-10">
-      <header>
-        <p className="eyebrow text-gruen">Anmerkungen</p>
-        <h1 className="mt-2.5 text-3xl sm:text-4xl">Was dir aufgefallen ist</h1>
-        <p className="mt-4 leading-relaxed text-tinte2">
-          Der Stift unten rechts notiert von jeder Seite aus – samt der Seite, auf der du gerade
-          warst. Hier stehen die Notizen zum Durchgehen und Weitergeben.
-        </p>
-        <p className="mt-3 text-sm text-tinte3">
-          Die Liste liegt in deinem Browser. Sie wird nirgends automatisch verschickt: Zum
-          Weitergeben kopierst du sie oder lädst sie als Datei herunter.
-        </p>
-      </header>
+      {kopf}
 
       {daten.hinweise.length === 0 ? (
         <div className="mt-9 rounded-xl border border-dashed border-linie2 p-8 text-center">
@@ -227,18 +238,20 @@ export default function Hinweise() {
               >
                 Als Datei sichern
               </button>
-              <button
-                type="button"
-                onClick={() => {
-                  if (confirm("Alle erledigten Anmerkungen entfernen?")) {
-                    setDaten((d) => ({ ...d, hinweise: d.hinweise.filter((h) => !h.erledigt) }));
-                  }
-                }}
-                className="rounded-lg border border-linie2 px-5 py-2.5 text-sm font-semibold text-tinte3 transition-colors hover:border-rot hover:text-rot"
-              >
-                Erledigte aufräumen
-              </button>
+              <Sicherheitsknopf
+                label="Erledigte aufräumen"
+                frage="Alle erledigten Anmerkungen entfernen?"
+                bestaetigung="Ja, entfernen"
+                onBestaetigt={() =>
+                  setDaten((d) => ({ ...d, hinweise: d.hinweise.filter((h) => !h.erledigt) }))
+                }
+              />
             </div>
+            {meldung && (
+              <p role="status" className="mt-4 text-sm text-rot">
+                {meldung}
+              </p>
+            )}
           </section>
         </>
       )}

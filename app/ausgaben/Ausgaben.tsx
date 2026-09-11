@@ -23,6 +23,8 @@ export default function Ausgaben() {
   const [tag, setTag] = useState(() => new Date().toISOString().slice(0, 10));
   const [notiz, setNotiz] = useState("");
   const [gebucht, setGebucht] = useState<string | null>(null);
+  const [kategorieOffen, setKategorieOffen] = useState(false);
+  const [neueKategorie, setNeueKategorie] = useState("");
   const betragRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -73,14 +75,36 @@ export default function Ausgaben() {
   }
 
   function kategorieErgaenzen() {
-    const name = prompt("Neue Kategorie")?.trim();
-    if (!name || daten.kategorien.includes(name)) return;
-    setDaten((d) => ({ ...d, kategorien: [...d.kategorien, name] }));
+    const name = neueKategorie.trim();
+    if (!name) return;
+    if (!daten.kategorien.some((k) => k.toLowerCase() === name.toLowerCase())) {
+      setDaten((d) => ({ ...d, kategorien: [...d.kategorien, name] }));
+    }
     setKategorie(name);
+    setNeueKategorie("");
+    setKategorieOffen(false);
   }
 
+  // Der Kopf gehört ins ausgelieferte HTML, damit Vorschau, Suchmaschine und
+  // ein langsames Netz mehr sehen als "Lädt".
+  const kopf = (
+    <header>
+      <p className="eyebrow text-rot">Ausgaben</p>
+      <h1 className="mt-2.5 text-3xl sm:text-4xl">Erfassen</h1>
+      <p className="mt-4 max-w-2xl leading-relaxed text-tinte2">
+        Drei Monate am Stück, dann steht die Zahl, die alles andere bemisst. Jeder Eintrag dauert
+        zwei Sekunden – Betrag, Kategorie, fertig.
+      </p>
+    </header>
+  );
+
   if (!bereit) {
-    return <div className="mx-auto max-w-4xl px-5 py-20 text-tinte3">Lade deine Daten …</div>;
+    return (
+      <div className="mx-auto max-w-4xl px-5 py-10">
+        {kopf}
+        <p className="mt-8 text-tinte3">Lädt …</p>
+      </div>
+    );
   }
 
   const uebernommen =
@@ -90,14 +114,7 @@ export default function Ausgaben() {
 
   return (
     <div className="mx-auto max-w-4xl px-5 py-10">
-      <header>
-        <p className="eyebrow text-rot">Ausgaben</p>
-        <h1 className="mt-2.5 text-3xl sm:text-4xl">Erfassen</h1>
-        <p className="mt-4 max-w-2xl leading-relaxed text-tinte2">
-          Drei Monate am Stück, dann steht die Zahl, die alles andere bemisst. Jeder Eintrag
-          dauert zwei Sekunden – Betrag, Kategorie, fertig.
-        </p>
-      </header>
+      {kopf}
 
       {/* ───────────────────────────── Erfassen */}
       <section className="mt-8 rounded-xl border border-linie bg-flaeche p-5 sm:p-6">
@@ -133,13 +150,40 @@ export default function Ausgaben() {
               {k}
             </button>
           ))}
-          <button
-            type="button"
-            onClick={kategorieErgaenzen}
-            className="rounded-full border border-dashed border-linie2 px-4 py-2 text-sm text-tinte3 transition-colors hover:border-gruen hover:text-gruen"
-          >
-            + Kategorie
-          </button>
+          {kategorieOffen ? (
+            <span className="inline-flex items-center gap-2">
+              <input
+                autoFocus
+                value={neueKategorie}
+                onChange={(e) => setNeueKategorie(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") kategorieErgaenzen();
+                  if (e.key === "Escape") {
+                    setNeueKategorie("");
+                    setKategorieOffen(false);
+                  }
+                }}
+                placeholder="Name der Kategorie"
+                aria-label="Name der neuen Kategorie"
+                className="w-44 rounded-full border border-gruen bg-papier px-4 py-2 text-sm outline-none"
+              />
+              <button
+                type="button"
+                onClick={kategorieErgaenzen}
+                className="rounded-full bg-gruen px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#256a43]"
+              >
+                Anlegen
+              </button>
+            </span>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setKategorieOffen(true)}
+              className="rounded-full border border-dashed border-linie2 px-4 py-2 text-sm text-tinte3 transition-colors hover:border-gruen hover:text-gruen"
+            >
+              + Kategorie
+            </button>
+          )}
         </div>
 
         <div className="mt-5 grid gap-3 sm:grid-cols-[auto_1fr_auto] sm:items-center">

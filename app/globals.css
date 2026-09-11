@@ -98,6 +98,28 @@ body {
   body {
     background: #fff;
   }
+  /* Farbige Balken und Reiter tragen hier Bedeutung, nicht Dekoration –
+     Browser sparen sie sonst beim Drucken weg. */
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  /* Eine Karte soll nicht mitten im Seitenumbruch aufreissen. */
+  section,
+  article,
+  li,
+  figure,
+  tr {
+    break-inside: avoid;
+  }
+  h1,
+  h2,
+  h3 {
+    break-after: avoid;
+  }
+  a[href^="/"]::after {
+    content: "";
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

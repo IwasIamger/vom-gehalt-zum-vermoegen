@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import Link from "next/link";
 import Anmerkung from "@/components/Anmerkung";
+import Offline from "@/components/Offline";
+import Speicherhinweis from "@/components/Speicherhinweis";
 import Tableiste from "@/components/Tableiste";
 import "./globals.css";
 
@@ -60,8 +62,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </div>
         </header>
 
+        <Speicherhinweis />
+
         <main className="flex-1">{children}</main>
 
+        <Offline />
         <Anmerkung />
         <Tableiste />
 

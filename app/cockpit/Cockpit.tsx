@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import Linienchart from "@/components/Linienchart";
+import Sicherheitsknopf from "@/components/Sicherheitsknopf";
 import { datum as fdatum, euro, prozent, prozentKurz, zahlAusEingabe } from "@/lib/format";
 import {
   REBALANCING_SCHWELLE,
@@ -132,7 +133,17 @@ export default function Cockpit() {
   }
 
   if (!bereit) {
-    return <div className="mx-auto max-w-6xl px-5 py-20 text-tinte3">Lade deine Daten …</div>;
+    return (
+      <div className="mx-auto max-w-6xl px-5 py-10">
+        <p className="eyebrow text-gruen">Cockpit</p>
+        <h1 className="mt-2.5 text-3xl sm:text-4xl">Dein Stand</h1>
+        <p className="mt-4 max-w-2xl leading-relaxed text-tinte2">
+          Vermögensbilanz, Entwicklung, Prognose, Soll gegen Ist und die offenen Punkte – alles
+          aus den Zahlen, die in diesem Browser liegen.
+        </p>
+        <p className="mt-8 text-tinte3">Lädt …</p>
+      </div>
+    );
   }
 
   const leer = daten.bilanz.length === 0;
@@ -969,6 +980,13 @@ function Datenzeile({
   dateiRef: React.RefObject<HTMLInputElement | null>;
   standFesthalten: () => void;
 }) {
+  const [meldung, setMeldung] = useState<string | null>(null);
+  useEffect(() => {
+    if (!meldung) return;
+    const t = window.setTimeout(() => setMeldung(null), 4000);
+    return () => window.clearTimeout(t);
+  }, [meldung]);
+
   return (
     <section className="kein-druck rounded-xl border border-linie bg-flaeche p-6">
       <p className="text-sm leading-relaxed text-tinte2">
@@ -1010,29 +1028,36 @@ function Datenzeile({
           ref={dateiRef}
           type="file"
           accept="application/json"
+          aria-label="Gesicherte Datei laden"
           className="hidden"
           onChange={async (e) => {
             const f = e.target.files?.[0];
             if (!f) return;
             const d = importieren(await f.text());
-            if (d) setDaten(d);
-            else alert("Die Datei passt nicht zu diesem Format.");
+            if (d) {
+              setDaten(d);
+              setMeldung("Datei geladen.");
+            } else {
+              setMeldung("Die Datei passt nicht zu diesem Format.");
+            }
             e.target.value = "";
           }}
         />
-        <button
-          type="button"
-          onClick={() => {
-            if (confirm("Alle Eingaben auf diesem Gerät löschen?")) {
-              loeschen();
-              setDaten({ ...LEER, aktualisiert: new Date().toISOString() });
-            }
+        <Sicherheitsknopf
+          label="Alles löschen"
+          frage="Alle Eingaben auf diesem Gerät löschen?"
+          onBestaetigt={() => {
+            loeschen();
+            setDaten({ ...LEER, aktualisiert: new Date().toISOString() });
+            setMeldung("Alles gelöscht.");
           }}
-          className="rounded-lg border border-linie2 px-5 py-2.5 text-sm font-semibold text-tinte3 transition-colors hover:border-rot hover:text-rot"
-        >
-          Alles löschen
-        </button>
+        />
       </div>
+      {meldung && (
+        <p role="status" className="mt-4 text-sm text-tinte2">
+          {meldung}
+        </p>
+      )}
     </section>
   );
 }

@@ -39,6 +39,9 @@ export type RechnerDef = {
   fussnote?: string;
 };
 
+/** Deutsche Schreibweise fuer Zahlen, die in Fliesstext landen. */
+const zahl = (n: number) => n.toLocaleString("de-DE", { maximumFractionDigits: 2 });
+
 const j = (label: string, start: number, hinweis?: string): Feld => ({
   key: "jahre",
   label,
@@ -80,7 +83,7 @@ export const RECHNER: RechnerDef[] = [
             ? `${monate} Monate`
             : "–",
           hinweis: Number.isFinite(monate)
-            ? `Das sind rund ${(monate / 12).toFixed(1)} Jahre.`
+            ? `Das sind rund ${(monate / 12).toLocaleString("de-DE", { maximumFractionDigits: 1 })} Jahre.`
             : "Trag eine monatliche Rate ein.",
         },
         {
@@ -233,8 +236,8 @@ export const RECHNER: RechnerDef[] = [
       const k = kostenVergleich(v.rate, v.jahre, v.brutto / 100, v.terA / 100, v.terB / 100);
       return [
         { label: "Unterschied", wert: euro(k.differenz), gross: true, ton: "rot" },
-        { label: `Mit ${v.terA} % Kosten`, wert: euro(k.a), ton: "gruen" },
-        { label: `Mit ${v.terB} % Kosten`, wert: euro(k.b) },
+        { label: `Mit ${zahl(v.terA)} % Kosten`, wert: euro(k.a), ton: "gruen" },
+        { label: `Mit ${zahl(v.terB)} % Kosten`, wert: euro(k.b) },
         {
           label: "Eingezahlt in beiden Fällen",
           wert: euro(k.einzahlungen),
