@@ -212,9 +212,16 @@ export const STEUER = {
   basiszins2026: 0.032,
 } as const;
 
+/**
+ * Der Abgeltungsteuersatz vor Anrechnung des Pauschbetrags.
+ *
+ * Kirchensteuer ist als Sonderausgabe abziehbar, deshalb sinkt die
+ * Abgeltungsteuer selbst: 25 % / (1 + 25 % × Kirchensteuersatz). Ohne diesen
+ * Abzug käme man bei 9 % auf 28,63 % statt der tatsächlichen 27,99 %.
+ */
 export function steuersatz(kirchensteuer = 0, teilfreistellung = 0): number {
-  const basis = STEUER.abgeltung * (1 - teilfreistellung);
-  return basis * (1 + STEUER.soli + kirchensteuer);
+  const abgeltung = STEUER.abgeltung / (1 + STEUER.abgeltung * kirchensteuer);
+  return abgeltung * (1 + STEUER.soli + kirchensteuer) * (1 - teilfreistellung);
 }
 
 /** Steuer auf einen Ertrag, Pauschbetrag wird angerechnet. */
@@ -223,7 +230,8 @@ export function kapitalertragsteuer(
   { kirchensteuer = 0, teilfreistellung = 0, pauschbetragRest = STEUER.sparerpauschbetrag } = {},
 ) {
   const steuerpflichtig = Math.max(0, ertrag * (1 - teilfreistellung) - pauschbetragRest);
-  const satz = STEUER.abgeltung * (1 + STEUER.soli + kirchensteuer);
+  // Teilfreistellung steckt schon im steuerpflichtigen Betrag – hier nur der Satz.
+  const satz = steuersatz(kirchensteuer);
   return {
     steuer: steuerpflichtig * satz,
     genutzterPauschbetrag: Math.min(pauschbetragRest, Math.max(0, ertrag * (1 - teilfreistellung))),

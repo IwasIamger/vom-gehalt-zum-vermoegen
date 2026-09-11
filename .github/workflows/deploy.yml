@@ -24,6 +24,9 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      # Der Rechenkern ist das Produkt. Schlaegt hier etwas fehl, wird nicht
+      # veroeffentlicht - eine falsche Zahl ist schlimmer als eine alte Seite.
+      - run: npm test
       - run: npm run build
         env:
           NEXT_PUBLIC_BASE_PATH: /vom-gehalt-zum-vermoegen
