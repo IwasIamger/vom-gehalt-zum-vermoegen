@@ -40,7 +40,9 @@ export type Block =
       }[];
     }
   | { art: "tabelle"; kopf: string[]; zeilen: string[][] }
-  | { art: "cta"; text: string; label: string; href: string };
+  | { art: "cta"; text: string; label: string; href: string }
+  /** Holt die aktuellen Werte direkt bei der EZB. */
+  | { art: "live" };
 
 export type Abschnitt = { titel: string; bloecke: Block[] };
 
@@ -151,6 +153,7 @@ export const KAPITEL: Kapitel[] = [
               },
             ],
           },
+          { art: "live" },
           {
             art: "hinweis",
             ton: "rot",
@@ -538,7 +541,7 @@ export const KAPITEL: Kapitel[] = [
           {
             art: "rendite",
             ton: "gruen",
-            wert: "≈ 2,25 % p. a.",
+            wert: "≈ EZB-Einlagenzins",
             hinweis:
               "Der Notgroschen ist keine Geldanlage – aber er soll auch nicht schrumpfen.",
           },
@@ -567,10 +570,11 @@ export const KAPITEL: Kapitel[] = [
               },
               {
                 titel: "Zinsen möglichst hoch",
-                text: "Rund 2,25 % – so viel gibt die EZB vor. Höhere Angebote sind meist Aktionszinsen: oft vier Monate, begrenzt auf 25.000 €.",
+                text: "So viel wie der EZB-Einlagenzins – den aktuellen Satz zeigt der Kasten unten. Höhere Angebote sind meist Aktionszinsen: oft vier Monate, begrenzt auf 25.000 €.",
               },
             ],
           },
+          { art: "live" },
           {
             art: "cta",
             text: "Wie viel dein Notgroschen haben muss, hängt allein an deinen Nettomonatsausgaben.",

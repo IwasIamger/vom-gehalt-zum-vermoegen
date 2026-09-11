@@ -1,8 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { rechnerNach } from "@/lib/rechner";
+import { ladeMarktdaten } from "@/lib/marktdaten";
 
 const TON: Record<string, string> = {
   gruen: "text-gruen",
@@ -21,6 +22,29 @@ export default function Rechner({ slug }: { slug: string }) {
   const [werte, setWerte] = useState<Record<string, number>>(() =>
     Object.fromEntries(def.felder.map((f) => [f.key, f.start])),
   );
+
+  // Felder mit Live-Kennzeichnung bekommen den aktuellen EZB-Satz – aber nur,
+  // solange der Nutzer sie noch nicht selbst angefasst hat.
+  const [beruehrt, setBeruehrt] = useState<Set<string>>(() => new Set());
+  useEffect(() => {
+    const live = def.felder.filter((f) => f.live);
+    if (live.length === 0) return;
+    let abgebrochen = false;
+    ladeMarktdaten().then((m) => {
+      if (abgebrochen || !m.einlagenzins) return;
+      const satz = Math.round(m.einlagenzins.wert * 10000) / 100;
+      setWerte((w) => {
+        const neu = { ...w };
+        for (const f of live) if (!beruehrt.has(f.key)) neu[f.key] = satz;
+        return neu;
+      });
+    });
+    return () => {
+      abgebrochen = true;
+    };
+    // beruehrt absichtlich nicht als Abhaengigkeit: nur beim ersten Laden vorbelegen
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [def]);
 
   const ergebnisse = useMemo(() => {
     try {
@@ -66,9 +90,10 @@ export default function Rechner({ slug }: { slug: string }) {
                         min={f.min ?? 0}
                         max={max}
                         step={schritt}
-                        onChange={(e) =>
-                          setWerte((w) => ({ ...w, [f.key]: Number(e.target.value) || 0 }))
-                        }
+                        onChange={(e) => {
+                          setBeruehrt((b) => new Set(b).add(f.key));
+                          setWerte((w) => ({ ...w, [f.key]: Number(e.target.value) || 0 }));
+                        }}
                         className="tabular w-24 rounded-md border border-linie2 bg-papier px-2.5 py-1.5 text-right font-serif text-lg font-bold outline-none focus:border-gruen sm:w-28"
                       />
                       <span className="w-10 shrink-0 text-xs text-tinte3">{einheit(f.art)}</span>
@@ -81,7 +106,10 @@ export default function Rechner({ slug }: { slug: string }) {
                     min={f.min ?? 0}
                     max={max}
                     step={schritt}
-                    onChange={(e) => setWerte((w) => ({ ...w, [f.key]: Number(e.target.value) }))}
+                    onChange={(e) => {
+                      setBeruehrt((b) => new Set(b).add(f.key));
+                      setWerte((w) => ({ ...w, [f.key]: Number(e.target.value) }));
+                    }}
                     className="mt-3 w-full accent-[var(--color-gruen)]"
                   />
                   {f.hinweis && <p className="mt-2 text-xs leading-relaxed text-tinte3">{f.hinweis}</p>}

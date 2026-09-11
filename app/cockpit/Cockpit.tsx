@@ -765,7 +765,7 @@ function Zeile({
         ) : (
           <p className="pb-2.5 text-xs leading-relaxed text-tinte3">
             {posten.art === "konto"
-              ? "Leer lassen heißt Tagesgeld mit 2,25 %. Für ein Girokonto gehört hier eine 0 hinein."
+              ? "Leer lassen heißt Tagesgeld zum EZB-Einlagenzins. Für ein Girokonto gehört hier eine 0 hinein."
               : posten.art === "sachwert"
                 ? "Ohne Angabe wird der Wert unverändert fortgeschrieben."
                 : "Der Zins, mit dem die Restschuld wächst. Die Tilgung oben rechnet dagegen."}

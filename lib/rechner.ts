@@ -19,6 +19,8 @@ export type Feld = {
   max?: number;
   schritt?: number;
   hinweis?: string;
+  /** Startwert aus aktuellen Marktdaten vorbelegen, sobald sie da sind. */
+  live?: "einlagenzins";
 };
 
 export type Ergebnis = {
@@ -71,6 +73,16 @@ export const RECHNER: RechnerDef[] = [
         hinweis: "Faustregel: 3 bis 5 Monatsausgaben. Bei unsicherem Einkommen eher mehr.",
       },
       { key: "rate", label: "Monatlich zurücklegen", start: 200, art: "euro", schritt: 25 },
+      {
+        key: "zins",
+        label: "Tagesgeldzins",
+        start: 2.25,
+        art: "prozent",
+        schritt: 0.05,
+        max: 6,
+        live: "einlagenzins",
+        hinweis: "Vorbelegt mit dem aktuellen EZB-Einlagenzins – das, was ein Tagesgeldkonto dauerhaft mitgeht.",
+      },
     ],
     rechne: (v) => {
       const ziel = notgroschenZiel(v.ausgaben, v.monate);
@@ -87,14 +99,14 @@ export const RECHNER: RechnerDef[] = [
             : "Trag eine monatliche Rate ein.",
         },
         {
-          label: "Zinsertrag bei 2,25 % Tagesgeld",
-          wert: `${euro((ziel * 0.0225) / 12)} pro Monat`,
+          label: `Zinsertrag bei ${zahl(v.zins)} % Tagesgeld`,
+          wert: `${euro((ziel * v.zins) / 100 / 12)} pro Monat`,
           hinweis:
             "Dauerhaft zahlbar ist etwa der EZB-Einlagenzins. Angebote mit 4 % sind meist Aktionszinsen über vier Monate.",
         },
       ];
     },
-    fussnote: "EZB-Einlagenzins 2,25 %, Stand 09/2026.",
+    fussnote: "Der Tagesgeldzins wird beim Öffnen mit dem aktuellen EZB-Einlagenzins vorbelegt.",
   },
   {
     slug: "sparrate",

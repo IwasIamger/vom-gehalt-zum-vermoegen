@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Marktdaten from "@/components/Marktdaten";
 import type { Block, Ton } from "@/lib/kapitel";
 
 const TEXT: Record<Ton, string> = {
@@ -222,6 +223,9 @@ function Einzeln({ b }: { b: Block }) {
           </table>
         </div>
       );
+
+    case "live":
+      return <Marktdaten />;
 
     case "cta":
       return (
