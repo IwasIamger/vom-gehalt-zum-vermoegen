@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Marktdaten from "@/components/Marktdaten";
+import { ANBIETER } from "@/lib/anbieter";
 import type { Block, Ton } from "@/lib/kapitel";
 
 const TEXT: Record<Ton, string> = {
@@ -226,6 +227,40 @@ function Einzeln({ b }: { b: Block }) {
 
     case "live":
       return <Marktdaten />;
+
+    case "anbieter":
+      return (
+        <div>
+          <div className="grid gap-5 md:grid-cols-2">
+            {ANBIETER.map((a) => (
+              <article key={a.name} className="rounded-xl border border-linie bg-flaeche p-6">
+                <div className="flex items-start justify-between gap-3">
+                  <h3 className="text-xl">{a.name}</h3>
+                  <span className="eyebrow shrink-0 rounded bg-gold-hell px-2 py-1 text-gold">
+                    Werbung
+                  </span>
+                </div>
+                <p className="mt-3 text-sm leading-relaxed text-tinte2">{a.was}</p>
+                {a.bonus && <p className="mt-2 text-sm font-semibold text-gruen">{a.bonus}</p>}
+                {a.hinweis && <p className="mt-2 text-sm text-rot">{a.hinweis}</p>}
+                <a
+                  href={a.url}
+                  target="_blank"
+                  rel="sponsored noopener noreferrer"
+                  className="mt-5 inline-block rounded-lg bg-tinte px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-gruen"
+                >
+                  Konto eröffnen ↗
+                </a>
+                <p className="mt-2 text-xs text-tinte3">{a.kurz}</p>
+              </article>
+            ))}
+          </div>
+          <p className="mt-4 max-w-3xl text-xs leading-relaxed text-tinte3">
+            Empfehlungslinks: Eröffnest du darüber ein Konto, gibt der Anbieter etwas zurück – du
+            zahlst keinen Cent mehr. So finanziert sich diese Seite, ohne dass sie dich etwas kostet.
+          </p>
+        </div>
+      );
 
     case "cta":
       return (

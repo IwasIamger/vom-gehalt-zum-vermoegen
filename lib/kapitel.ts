@@ -42,7 +42,9 @@ export type Block =
   | { art: "tabelle"; kopf: string[]; zeilen: string[][] }
   | { art: "cta"; text: string; label: string; href: string }
   /** Holt die aktuellen Werte direkt bei der EZB. */
-  | { art: "live" };
+  | { art: "live" }
+  /** Anbieter mit Empfehlungslinks – als Werbung gekennzeichnet. */
+  | { art: "anbieter" };
 
 export type Abschnitt = { titel: string; bloecke: Block[] };
 
@@ -1347,6 +1349,7 @@ export const KAPITEL: Kapitel[] = [
               ["Überblick", "Alle Depots an einer Stelle", "Finanzfluss App"],
             ],
           },
+          { art: "anbieter" },
           {
             art: "hinweis",
             ton: "gold",
