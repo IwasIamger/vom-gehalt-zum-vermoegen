@@ -247,3 +247,62 @@ export function alsCsv(
   const text = [kopf, ...zeilen].map((z) => z.map(csvFeld).join(";")).join("\r\n");
   return "\uFEFF" + text + "\r\n";
 }
+
+// ─────────────────────────────────────────────────────────── Budget
+
+export type Budgetzeile = {
+  kategorie: string;
+  budget: number;
+  ausgegeben: number;
+  rest: number;
+  /** Anteil des Budgets, der weg ist. Kann über 1 liegen. */
+  anteil: number;
+  /** Wo man am heutigen Tag rechnerisch stehen dürfte. */
+  tempo: number;
+  ampel: "gruen" | "gold" | "rot";
+};
+
+/**
+ * Budget gegen Ausgaben des laufenden Monats.
+ *
+ * Die Ampel misst nicht nur "über Budget", sondern das Tempo: Wer am 10. schon
+ * die Hälfte weg hat, liegt zwar unter Budget, aber über Plan – das ist Gold.
+ * Rot ist erst, wenn das Budget wirklich überschritten ist.
+ */
+export function budgetStand(
+  budgets: Record<string, number>,
+  ausgaben: Ausgabe[],
+  dauerausgaben: Dauerausgabe[] = [],
+  heute = new Date(),
+): Budgetzeile[] {
+  const monat = laufenderMonat(heute);
+  const werte = proMonat(ausgaben, dauerausgaben, heute).find((m) => m.monat === monat);
+  const tag = heute.getUTCDate();
+  const tageImMonat = new Date(Date.UTC(heute.getUTCFullYear(), heute.getUTCMonth() + 1, 0)).getUTCDate();
+  const zeitanteil = tag / tageImMonat;
+
+  return Object.entries(budgets)
+    .filter(([, b]) => b > 0)
+    .map(([kategorie, budget]) => {
+      const ausgegeben = werte?.proKategorie.find((k) => k.kategorie === kategorie)?.summe ?? 0;
+      const anteil = ausgegeben / budget;
+      const tempo = zeitanteil;
+      const ampel: Budgetzeile["ampel"] = anteil > 1 ? "rot" : anteil > tempo + 0.05 ? "gold" : "gruen";
+      return { kategorie, budget, ausgegeben, rest: budget - ausgegeben, anteil, tempo, ampel };
+    })
+    .sort((a, b) => b.anteil - a.anteil);
+}
+
+/** Vorschlag fürs Budget: der Schnitt der letzten vollen Monate, aufgerundet auf 10 €. */
+export function budgetVorschlag(
+  kategorie: string,
+  ausgaben: Ausgabe[],
+  dauerausgaben: Dauerausgabe[] = [],
+  heute = new Date(),
+): number | undefined {
+  const volle = volleMonate(ausgaben, dauerausgaben, heute).slice(-3);
+  if (volle.length === 0) return undefined;
+  const summe = volle.reduce((s, m) => s + (m.proKategorie.find((k) => k.kategorie === kategorie)?.summe ?? 0), 0);
+  if (summe === 0) return undefined;
+  return Math.ceil(summe / volle.length / 10) * 10;
+}

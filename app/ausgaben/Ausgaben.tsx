@@ -5,6 +5,8 @@ import Link from "next/link";
 import { datum as fdatum, euro, plural, zahlAusEingabe } from "@/lib/format";
 import {
   alsCsv,
+  budgetStand,
+  budgetVorschlag,
   fortschritt,
   laufenderMonat,
   monatKurz,
@@ -60,6 +62,11 @@ export default function Ausgaben() {
     [daten.ausgaben, daten.dauerausgaben],
   );
   const tage = useMemo(() => proTag(daten.ausgaben), [daten.ausgaben]);
+  const budget = useMemo(
+    () => budgetStand(daten.budgets, daten.ausgaben, daten.dauerausgaben),
+    [daten.budgets, daten.ausgaben, daten.dauerausgaben],
+  );
+
   const monatlichFest = useMemo(
     () => daten.dauerausgaben.filter((x) => x.rhythmus === 1).reduce((s, x) => s + x.betrag, 0),
     [daten.dauerausgaben],
@@ -87,7 +94,25 @@ export default function Ausgaben() {
     setDaten((d) => ({ ...d, ausgaben: [...d.ausgaben, eintrag] }));
     setBetrag("");
     setNotiz("");
-    setGebucht(`${euro(wert)} · ${eintrag.kategorie}`);
+    const b = daten.budgets[eintrag.kategorie];
+    if (b) {
+      // Mit dem neuen Eintrag rechnen, nicht mit dem alten Stand.
+      const stand = budgetStand(
+        daten.budgets,
+        [...daten.ausgaben, eintrag],
+        daten.dauerausgaben,
+      ).find((z) => z.kategorie === eintrag.kategorie);
+      const rest = stand ? stand.rest : b;
+      setGebucht(
+        `${euro(wert)} · ${eintrag.kategorie} – ${
+          rest >= 0
+            ? `noch ${euro(rest)} von ${euro(b)} diesen Monat`
+            : `${euro(-rest)} über dem Budget von ${euro(b)}`
+        }`,
+      );
+    } else {
+      setGebucht(`${euro(wert)} · ${eintrag.kategorie}`);
+    }
     window.setTimeout(() => setGebucht(null), 2500);
     betragRef.current?.focus();
   }
@@ -386,6 +411,96 @@ export default function Ausgaben() {
         >
           + Feste Ausgabe
         </button>
+      </section>
+
+      {/* Budget je Kategorie */}
+      <section className="mt-6 rounded-xl border border-linie bg-flaeche p-6">
+        <div className="flex flex-wrap items-baseline justify-between gap-3">
+          <h2 className="text-xl">Budget</h2>
+          <p className="text-sm text-tinte3">{monatName(laufenderMonat())}</p>
+        </div>
+        <p className="mt-2 max-w-2xl text-sm leading-relaxed text-tinte2">
+          Ein Betrag je Kategorie, den du im Monat nicht überschreiten willst. Die Ampel misst das
+          Tempo: Gold heißt „schneller als der Monat vergeht“, Rot heißt „drüber“. Leer lassen, was
+          du nicht steuern willst.
+        </p>
+
+        <div className="mt-6 space-y-5">
+          {daten.kategorien.map((k) => {
+            const zeile = budget.find((z) => z.kategorie === k);
+            const vorschlag = budgetVorschlag(k, daten.ausgaben, daten.dauerausgaben);
+            const farbe =
+              zeile?.ampel === "rot" ? "bg-rot" : zeile?.ampel === "gold" ? "bg-gold" : "bg-gruen";
+            return (
+              <div key={k}>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <span className="text-sm font-medium text-tinte">{k}</span>
+                  <span className="flex items-center gap-2">
+                    {zeile && (
+                      <span className="tabular text-sm text-tinte2">
+                        {euro(zeile.ausgegeben, false)} von
+                      </span>
+                    )}
+                    <span className="flex items-center gap-1.5 rounded-md border border-linie2 bg-papier px-2.5 py-1.5 focus-within:border-gruen">
+                      <input
+                        inputMode="decimal"
+                        defaultValue={daten.budgets[k] ? String(daten.budgets[k]).replace(".", ",") : ""}
+                        placeholder={vorschlag ? String(vorschlag) : "–"}
+                        onBlur={(e) => {
+                          const v = zahlAusEingabe(e.target.value);
+                          setDaten((d) => {
+                            const neu = { ...d.budgets };
+                            if (v && v > 0) neu[k] = v;
+                            else delete neu[k];
+                            return { ...d, budgets: neu };
+                          });
+                        }}
+                        aria-label={`Budget ${k}`}
+                        className="tabular w-20 bg-transparent text-right text-sm outline-none placeholder:text-tinte3"
+                      />
+                      <span className="text-xs text-tinte3">€</span>
+                    </span>
+                  </span>
+                </div>
+                {zeile && (
+                  <>
+                    <div className="relative mt-2 h-2.5 overflow-hidden rounded-full bg-papier">
+                      <div
+                        className={`h-full rounded-full ${farbe}`}
+                        style={{ width: `${Math.min(100, zeile.anteil * 100)}%` }}
+                      />
+                      {/* Tempo-Marke: wo man heute stehen dürfte */}
+                      <span
+                        className="absolute top-0 h-full w-0.5 bg-tinte"
+                        style={{ left: `${zeile.tempo * 100}%` }}
+                        aria-hidden
+                      />
+                    </div>
+                    <p
+                      className={`tabular mt-1 text-xs ${
+                        zeile.ampel === "rot"
+                          ? "font-semibold text-rot"
+                          : zeile.ampel === "gold"
+                            ? "text-gold"
+                            : "text-tinte3"
+                      }`}
+                    >
+                      {zeile.rest >= 0
+                        ? `noch ${euro(zeile.rest, false)}`
+                        : `${euro(-zeile.rest, false)} über dem Budget`}
+                      {zeile.ampel === "gold" && " – schneller als der Monat vergeht"}
+                    </p>
+                  </>
+                )}
+                {!zeile && vorschlag && (
+                  <p className="mt-1 text-xs text-tinte3">
+                    Vorschlag aus deinen letzten Monaten: {euro(vorschlag, false)}
+                  </p>
+                )}
+              </div>
+            );
+          })}
+        </div>
       </section>
 
       {/* ───────────────────────────── Fortschritt */}

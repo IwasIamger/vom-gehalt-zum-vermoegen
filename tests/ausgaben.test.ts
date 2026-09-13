@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   alsCsv,
+  budgetStand,
+  budgetVorschlag,
   dauerFuerMonat,
   faelligIn,
   fortschritt,
@@ -410,5 +412,66 @@ describe("alsCsv", () => {
     const summeApp = proMonat(juniBisSeptember, [dauer("Miete", 820, 1, "2026-06")], HEUTE)
       .reduce((s, m) => s + m.summe, 0);
     expect(summeCsv).toBeCloseTo(summeApp, 6);
+  });
+});
+
+describe("budgetStand", () => {
+  // 11. September: 11 von 30 Tagen, also rund 37 % des Monats vorbei.
+  const budgets = { Freizeit: 200, "Täglicher Bedarf": 600, Fixkosten: 900 };
+  const monat = [a("2026-09-03", 50, "Freizeit"), a("2026-09-08", 30, "Freizeit"), a("2026-09-10", 400, "Täglicher Bedarf")];
+
+  it("rechnet Ausgegeben, Rest und Anteil je Kategorie", () => {
+    const z = budgetStand(budgets, monat, [], HEUTE).find((x) => x.kategorie === "Freizeit")!;
+    expect(z.ausgegeben).toBe(80);
+    expect(z.rest).toBe(120);
+    expect(z.anteil).toBeCloseTo(0.4, 10);
+  });
+
+  it("ist grün, wenn man im Plan liegt", () => {
+    const z = budgetStand(budgets, monat, [], HEUTE).find((x) => x.kategorie === "Freizeit")!;
+    // 40 % weg bei 37 % Monat – innerhalb der Toleranz von fünf Punkten.
+    expect(z.ampel).toBe("gruen");
+  });
+
+  it("ist gold, wenn man schneller ausgibt als der Monat vergeht", () => {
+    const z = budgetStand(budgets, monat, [], HEUTE).find((x) => x.kategorie === "Täglicher Bedarf")!;
+    expect(z.anteil).toBeCloseTo(400 / 600, 10);
+    expect(z.ampel).toBe("gold");
+  });
+
+  it("ist rot erst über dem Budget", () => {
+    const z = budgetStand({ Freizeit: 70 }, monat, [], HEUTE)[0];
+    expect(z.ampel).toBe("rot");
+    expect(z.rest).toBeLessThan(0);
+  });
+
+  it("zählt feste Ausgaben mit", () => {
+    const z = budgetStand(budgets, [], [dauer("Miete", 820, 1, "2026-01")], HEUTE).find((x) => x.kategorie === "Fixkosten")!;
+    expect(z.ausgegeben).toBe(820);
+  });
+
+  it("lässt Kategorien ohne Budget weg und sortiert nach Auslastung", () => {
+    const z = budgetStand(budgets, monat, [], HEUTE);
+    expect(z.map((x) => x.kategorie)).toEqual(["Täglicher Bedarf", "Freizeit", "Fixkosten"]);
+    expect(budgetStand({ Freizeit: 0 }, monat, [], HEUTE)).toEqual([]);
+  });
+
+  it("ignoriert Ausgaben anderer Monate", () => {
+    const z = budgetStand({ Freizeit: 200 }, [a("2026-08-30", 999, "Freizeit")], [], HEUTE)[0];
+    expect(z.ausgegeben).toBe(0);
+  });
+});
+
+describe("budgetVorschlag", () => {
+  it("nimmt den Schnitt der letzten vollen Monate, auf 10 € aufgerundet", () => {
+    // Juni bis August "Täglicher Bedarf": 1000, 900, 1100 → 1000
+    expect(budgetVorschlag("Täglicher Bedarf", juniBisSeptember, [], HEUTE)).toBe(1000);
+    // Fixkosten nur in zwei von drei Monaten: (1200 + 983 + 0) / 3 = 727,67 → 730
+    expect(budgetVorschlag("Fixkosten", juniBisSeptember, [], HEUTE)).toBe(730);
+  });
+
+  it("bleibt ohne Daten leer", () => {
+    expect(budgetVorschlag("Freizeit", [], [], HEUTE)).toBeUndefined();
+    expect(budgetVorschlag("Gibt es nicht", juniBisSeptember, [], HEUTE)).toBeUndefined();
   });
 });

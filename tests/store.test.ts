@@ -160,6 +160,7 @@ describe("Export und Import", () => {
       dauerausgaben: [
         { id: "d", name: "Miete", betrag: 820, kategorie: "Fixkosten", rhythmus: 1, ab: "2026-01" },
       ],
+      budgets: { Freizeit: 200 },
       kategorien: ["Freizeit", "Sonstiges"],
       hinweise: [
         { id: "h", datum: "2026-08-06T10:00:00Z", art: "fehler", seite: "/cockpit/", text: "Test" },

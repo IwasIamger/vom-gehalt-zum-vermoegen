@@ -155,6 +155,8 @@ export type Daten = {
   verlauf: Momentaufnahme[];
   ausgaben: Ausgabe[];
   dauerausgaben: Dauerausgabe[];
+  /** Monatsbudget je Kategorie in Euro. Nur Kategorien mit Eintrag haben eines. */
+  budgets: Record<string, number>;
   kategorien: string[];
   hinweise: Hinweis[];
   /** IDs abgehakter Aufgaben. Die Liste selbst wird abgeleitet, nicht gespeichert. */
@@ -180,6 +182,7 @@ export const LEER: Daten = {
   verlauf: [],
   ausgaben: [],
   dauerausgaben: [],
+  budgets: {},
   kategorien: KATEGORIEN_START,
   hinweise: [],
   erledigt: [],
@@ -326,6 +329,7 @@ function migriere(roh: unknown): Daten | null {
     verlauf: d.verlauf ?? [],
     ausgaben: d.ausgaben ?? [],
     dauerausgaben: d.dauerausgaben ?? [],
+    budgets: d.budgets ?? {},
     kategorien: d.kategorien?.length ? d.kategorien : KATEGORIEN_START,
     hinweise: d.hinweise ?? [],
     erledigt: d.erledigt ?? [],
