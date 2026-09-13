@@ -96,6 +96,16 @@ export default function Ausgaben() {
     setDaten((d) => ({ ...d, ausgaben: d.ausgaben.filter((a) => a.id !== id) }));
   }
 
+  const [bearbeite, setBearbeite] = useState<string | null>(null);
+
+  function aendere(id: string, neu: Partial<Ausgabe>) {
+    setDaten((d) => ({
+      ...d,
+      ausgaben: d.ausgaben.map((a) => (a.id === id ? { ...a, ...neu } : a)),
+    }));
+    setBearbeite(null);
+  }
+
   function festeAendern(id: string, feld: keyof Dauerausgabe, wert: unknown) {
     setDaten((d) => ({
       ...d,
@@ -559,25 +569,42 @@ export default function Ausgaben() {
                   <p className="tabular text-sm text-tinte2">{euro(t.summe)}</p>
                 </div>
                 <ul className="divide-y divide-linie">
-                  {t.eintraege.map((a) => (
-                    <li key={a.id} className="flex items-center gap-3 px-5 py-3">
-                      <span className="min-w-0 flex-1">
-                        <span className="block text-sm font-medium text-tinte">{a.kategorie}</span>
-                        {a.notiz && (
-                          <span className="block text-xs text-tinte3">{a.notiz}</span>
-                        )}
-                      </span>
-                      <span className="tabular shrink-0 text-sm font-semibold">{euro(a.betrag)}</span>
-                      <button
-                        type="button"
-                        onClick={() => entferne(a.id)}
-                        aria-label={`${a.kategorie} über ${euro(a.betrag)} löschen`}
-                        className="kein-druck shrink-0 rounded-md border border-linie2 px-2.5 py-1 text-xs text-tinte3 transition-colors hover:border-rot hover:text-rot"
-                      >
-                        Löschen
-                      </button>
-                    </li>
-                  ))}
+                  {t.eintraege.map((a) =>
+                    bearbeite === a.id ? (
+                      <li key={a.id} className="px-5 py-4">
+                        <EintragBearbeiten
+                          eintrag={a}
+                          kategorien={daten.kategorien}
+                          onSpeichern={(neu) => aendere(a.id, neu)}
+                          onAbbrechen={() => setBearbeite(null)}
+                          onLoeschen={() => {
+                            entferne(a.id);
+                            setBearbeite(null);
+                          }}
+                        />
+                      </li>
+                    ) : (
+                      <li key={a.id} className="flex items-center gap-3 px-5 py-3">
+                        <button
+                          type="button"
+                          onClick={() => setBearbeite(a.id)}
+                          className="min-w-0 flex-1 rounded-md text-left transition-colors hover:text-gruen"
+                          aria-label={`${a.kategorie} über ${euro(a.betrag)} bearbeiten`}
+                        >
+                          <span className="block text-sm font-medium">{a.kategorie}</span>
+                          {a.notiz && <span className="block text-xs text-tinte3">{a.notiz}</span>}
+                        </button>
+                        <span className="tabular shrink-0 text-sm font-semibold">{euro(a.betrag)}</span>
+                        <button
+                          type="button"
+                          onClick={() => setBearbeite(a.id)}
+                          className="kein-druck shrink-0 rounded-md border border-linie2 px-2.5 py-1 text-xs text-tinte3 transition-colors hover:border-gruen hover:text-gruen"
+                        >
+                          Bearbeiten
+                        </button>
+                      </li>
+                    ),
+                  )}
                 </ul>
               </div>
             ))}
@@ -612,6 +639,133 @@ export default function Ausgaben() {
           </Link>
         </section>
       )}
+    </div>
+  );
+}
+
+/**
+ * Ein Eintrag im Bearbeiten-Modus. Enter speichert, Escape verwirft.
+ * Loeschen wandert hierher – so ist es eine bewusste Handlung, kein Knopf,
+ * den man beim Scrollen streift.
+ */
+function EintragBearbeiten({
+  eintrag,
+  kategorien,
+  onSpeichern,
+  onAbbrechen,
+  onLoeschen,
+}: {
+  eintrag: Ausgabe;
+  kategorien: string[];
+  onSpeichern: (neu: Partial<Ausgabe>) => void;
+  onAbbrechen: () => void;
+  onLoeschen: () => void;
+}) {
+  const [betrag, setBetrag] = useState(String(eintrag.betrag).replace(".", ","));
+  const [kategorie, setKategorie] = useState(eintrag.kategorie);
+  const [datum, setDatum] = useState(eintrag.datum);
+  const [notiz, setNotiz] = useState(eintrag.notiz ?? "");
+  const betragRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    betragRef.current?.focus();
+    betragRef.current?.select();
+  }, []);
+
+  function speichern() {
+    const wert = zahlAusEingabe(betrag);
+    if (!wert || wert <= 0 || !datum) {
+      betragRef.current?.focus();
+      return;
+    }
+    onSpeichern({ betrag: wert, kategorie, datum, notiz: notiz.trim() || undefined });
+  }
+
+  const tasten = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") speichern();
+    if (e.key === "Escape") onAbbrechen();
+  };
+
+  return (
+    <div className="rounded-lg border border-gruen/40 bg-gruen-hell p-4">
+      <div className="grid gap-3 sm:grid-cols-[1fr_1.3fr_1fr]">
+        <label className="block">
+          <span className="eyebrow mb-1.5 block text-tinte3">Betrag</span>
+          <span className="flex items-center gap-2 rounded-md border border-linie2 bg-flaeche px-3 py-2 focus-within:border-gruen">
+            <input
+              ref={betragRef}
+              inputMode="decimal"
+              value={betrag}
+              onChange={(e) => setBetrag(e.target.value)}
+              onKeyDown={tasten}
+              aria-label="Betrag"
+              className="tabular w-full bg-transparent text-right outline-none"
+            />
+            <span className="shrink-0 text-xs text-tinte3">€</span>
+          </span>
+        </label>
+        <label className="block">
+          <span className="eyebrow mb-1.5 block text-tinte3">Kategorie</span>
+          <select
+            value={kategorie}
+            onChange={(e) => setKategorie(e.target.value)}
+            className="w-full rounded-md border border-linie2 bg-flaeche px-3 py-2 outline-none focus:border-gruen"
+          >
+            {kategorien.map((k) => (
+              <option key={k} value={k}>
+                {k}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="block">
+          <span className="eyebrow mb-1.5 block text-tinte3">Datum</span>
+          <input
+            type="date"
+            value={datum}
+            onChange={(e) => setDatum(e.target.value)}
+            onKeyDown={tasten}
+            className="w-full rounded-md border border-linie2 bg-flaeche px-3 py-2 outline-none focus:border-gruen"
+          />
+        </label>
+      </div>
+      <label className="mt-3 block">
+        <span className="eyebrow mb-1.5 block text-tinte3">Notiz</span>
+        <input
+          value={notiz}
+          onChange={(e) => setNotiz(e.target.value)}
+          onKeyDown={tasten}
+          placeholder="optional"
+          className="w-full rounded-md border border-linie2 bg-flaeche px-3 py-2 text-sm outline-none focus:border-gruen"
+        />
+      </label>
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+        <button
+          type="button"
+          onClick={() => {
+            if (confirm("Diesen Eintrag löschen?")) onLoeschen();
+          }}
+          className="text-sm text-tinte3 underline transition-colors hover:text-rot"
+        >
+          Löschen
+        </button>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={onAbbrechen}
+            className="rounded-lg border border-linie2 px-4 py-2 text-sm font-semibold text-tinte transition-colors hover:border-tinte"
+          >
+            Abbrechen
+          </button>
+          <button
+            type="button"
+            onClick={speichern}
+            className="rounded-lg bg-gruen px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-gruen-tief"
+          >
+            Speichern
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
