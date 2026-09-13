@@ -74,7 +74,7 @@ export default function Seite() {
         <div className="mt-4 flex flex-wrap gap-3">
           <Link
             href="/rechner"
-            className="rounded-lg bg-gruen px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#256a43]"
+            className="rounded-lg bg-gruen px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-gruen-tief"
           >
             Zu den Rechnern
           </Link>

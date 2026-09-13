@@ -202,7 +202,7 @@ export default function Ausgaben() {
               <button
                 type="button"
                 onClick={kategorieErgaenzen}
-                className="rounded-full bg-gruen px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#256a43]"
+                className="rounded-full bg-gruen px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-gruen-tief"
               >
                 Anlegen
               </button>
@@ -445,7 +445,7 @@ export default function Ausgaben() {
                       nettomonatsausgaben: Math.round(sch.wert!),
                     }))
                   }
-                  className="mt-3 rounded-lg bg-gruen px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#256a43]"
+                  className="mt-3 rounded-lg bg-gruen px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-gruen-tief"
                 >
                   Als Nettomonatsausgaben übernehmen
                 </button>

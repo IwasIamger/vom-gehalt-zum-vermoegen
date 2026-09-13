@@ -5,6 +5,7 @@
 @theme {
   --color-papier: #fbfbf9;
   --color-flaeche: #ffffff;
+  --color-flaeche2: #f2f3f3;
   --color-tinte: #16211e;
   --color-tinte2: #5a6763;
   /* Gemessen statt geschaetzt: #8b9793 kam auf 2,9:1 gegen Papier und war
@@ -36,6 +37,61 @@
 
 html {
   -webkit-text-size-adjust: 100%;
+  color-scheme: light;
+}
+
+/* Dunkles Design: dieselben Namen, andere Werte. Folgt dem System, es sei
+   denn, jemand hat in der Fußzeile etwas anderes gewählt. Die Markenfarben
+   bleiben erkennbar, werden aber für dunklen Grund aufgehellt. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --color-papier: #0f1a17;
+    --color-flaeche: #16221e;
+    --color-flaeche2: #1c2925;
+    --color-tinte: #eef2ef;
+    --color-tinte2: #aab6b1;
+    --color-tinte3: #7c8985;
+    --color-linie: #26332e;
+    --color-linie2: #3a4843;
+    --color-gruen: #4fb07f;
+    --color-gruen-tief: #3d9469;
+    --color-gruen-hell: #15302a;
+    --color-blau: #5aa4e0;
+    --color-blau-tief: #8ec3ee;
+    --color-blau-hell: #14283a;
+    --color-rot: #e2655f;
+    --color-rot-tief: #ee8a85;
+    --color-rot-hell: #3a1f1e;
+    --color-gold: #d4a24f;
+    --color-gold-hell: #2b2518;
+    --color-dunkel: #0a1210;
+    --color-dunkel2: #142019;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --color-papier: #0f1a17;
+  --color-flaeche: #16221e;
+  --color-flaeche2: #1c2925;
+  --color-tinte: #eef2ef;
+  --color-tinte2: #aab6b1;
+  --color-tinte3: #7c8985;
+  --color-linie: #26332e;
+  --color-linie2: #3a4843;
+  --color-gruen: #4fb07f;
+  --color-gruen-tief: #3d9469;
+  --color-gruen-hell: #15302a;
+  --color-blau: #5aa4e0;
+  --color-blau-tief: #8ec3ee;
+  --color-blau-hell: #14283a;
+  --color-rot: #e2655f;
+  --color-rot-tief: #ee8a85;
+  --color-rot-hell: #3a1f1e;
+  --color-gold: #d4a24f;
+  --color-gold-hell: #2b2518;
+  --color-dunkel: #0a1210;
+  --color-dunkel2: #142019;
 }
 
 body {
@@ -91,7 +147,7 @@ body {
   outline-offset: 1px;
 }
 .feld--gefuellt {
-  background: #f6f8f6;
+  background: var(--color-flaeche2);
   border: 1px solid var(--color-linie2);
   border-style: solid;
 }

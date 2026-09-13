@@ -231,7 +231,7 @@ export default function Cockpit() {
           <div className="mt-4 flex flex-wrap gap-3">
             <Link
               href="/start"
-              className="rounded-lg bg-gruen px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#256a43]"
+              className="rounded-lg bg-gruen px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-gruen-tief"
             >
               Geführter Einstieg
             </Link>
@@ -366,7 +366,7 @@ export default function Cockpit() {
               <button
                 type="button"
                 onClick={standFesthalten}
-                className="kein-druck rounded-lg bg-gruen px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#256a43]"
+                className="kein-druck rounded-lg bg-gruen px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-gruen-tief"
               >
                 Heutigen Stand festhalten
               </button>
@@ -1080,7 +1080,7 @@ function Datenzeile({
         <button
           type="button"
           onClick={standFesthalten}
-          className="rounded-lg bg-gruen px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#256a43]"
+          className="rounded-lg bg-gruen px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-gruen-tief"
         >
           Stand festhalten
         </button>

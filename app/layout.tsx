@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import Link from "next/link";
 import Anmerkung from "@/components/Anmerkung";
+import Designwahl from "@/components/Designwahl";
 import Offline from "@/components/Offline";
 import Speicherhinweis from "@/components/Speicherhinweis";
 import Tableiste from "@/components/Tableiste";
@@ -25,7 +26,10 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0f1a17",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#0f1a17" },
+    { media: "(prefers-color-scheme: dark)", color: "#0a1210" },
+  ],
   width: "device-width",
   initialScale: 1,
 };
@@ -40,7 +44,16 @@ const navigation = [
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="de">
+    <html lang="de" suppressHydrationWarning>
+      <head>
+        {/* Gewähltes Design vor dem ersten Zeichnen setzen – sonst blitzt es hell auf. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              'try{var w=localStorage.getItem("finanzcockpit.design");if(w==="light"||w==="dark")document.documentElement.setAttribute("data-theme",w)}catch(e){}',
+          }}
+        />
+      </head>
       <body className="min-h-dvh flex flex-col">
         <header className="kein-druck sticky top-0 z-40 border-b border-linie bg-papier/85 backdrop-blur">
           <div className="mx-auto flex h-16 max-w-6xl items-center gap-6 px-5">
@@ -93,6 +106,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   </Link>
                 </p>
                 <p className="mt-3">© 2026 M. Ackermann</p>
+                <div className="mt-4">
+                  <Designwahl />
+                </div>
               </div>
             </div>
           </div>

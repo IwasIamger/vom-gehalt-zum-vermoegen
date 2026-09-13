@@ -183,7 +183,7 @@ export default function Rechner({ slug }: { slug: string }) {
         </p>
         <Link
           href="/kontensystem"
-          className="mt-4 inline-block rounded-lg bg-gruen px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#256a43]"
+          className="mt-4 inline-block rounded-lg bg-gruen px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-gruen-tief"
         >
           Zum Kontensystem
         </Link>

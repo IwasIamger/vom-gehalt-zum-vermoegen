@@ -83,7 +83,7 @@ export default function Start() {
             <div className="mt-9 flex flex-wrap gap-3">
               <Link
                 href="/start"
-                className="rounded-lg bg-gruen px-6 py-3.5 text-[15px] font-semibold text-white transition-colors hover:bg-[#256a43]"
+                className="rounded-lg bg-gruen px-6 py-3.5 text-[15px] font-semibold text-white transition-colors hover:bg-gruen-tief"
               >
                 In fünf Minuten startklar
               </Link>
@@ -193,7 +193,7 @@ export default function Start() {
             </p>
             <Link
               href="/cockpit"
-              className="mt-8 inline-block rounded-lg bg-gruen px-6 py-3.5 text-[15px] font-semibold text-white transition-colors hover:bg-[#256a43]"
+              className="mt-8 inline-block rounded-lg bg-gruen px-6 py-3.5 text-[15px] font-semibold text-white transition-colors hover:bg-gruen-tief"
             >
               Cockpit öffnen
             </Link>
@@ -229,7 +229,7 @@ export default function Start() {
           </p>
           <Link
             href="/start"
-            className="mt-8 inline-block rounded-lg bg-gruen px-6 py-3.5 text-[15px] font-semibold text-white transition-colors hover:bg-[#256a43]"
+            className="mt-8 inline-block rounded-lg bg-gruen px-6 py-3.5 text-[15px] font-semibold text-white transition-colors hover:bg-gruen-tief"
           >
             Jetzt anfangen
           </Link>

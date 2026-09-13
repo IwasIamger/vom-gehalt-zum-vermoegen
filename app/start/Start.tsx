@@ -384,7 +384,7 @@ export default function Start() {
             <div className="mt-8 flex flex-wrap gap-3">
               <Link
                 href="/cockpit"
-                className="rounded-lg bg-gruen px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-[#256a43]"
+                className="rounded-lg bg-gruen px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-gruen-tief"
               >
                 Zum Cockpit
               </Link>
@@ -420,7 +420,7 @@ export default function Start() {
               <button
                 type="button"
                 onClick={() => setSchritt((s) => s + 1)}
-                className="rounded-lg bg-gruen px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#256a43]"
+                className="rounded-lg bg-gruen px-6 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-gruen-tief"
               >
                 Weiter
               </button>

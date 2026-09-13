@@ -179,7 +179,7 @@ export default function Kontensystem() {
           </article>
 
           {/* Gegenrechnung */}
-          <article className="rounded-xl border border-tinte/50 bg-[#f2f3f3] p-5">
+          <article className="rounded-xl border border-tinte/50 bg-flaeche2 p-5">
             <span className="eyebrow rounded bg-[#4a5054] px-2 py-0.5 text-[10px] text-white">
               Gegenrechnung
             </span>

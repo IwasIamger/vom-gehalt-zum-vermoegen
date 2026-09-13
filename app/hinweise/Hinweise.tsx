@@ -124,7 +124,7 @@ export default function Hinweise() {
           </p>
           <Link
             href="/cockpit"
-            className="mt-5 inline-block rounded-lg bg-gruen px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#256a43]"
+            className="mt-5 inline-block rounded-lg bg-gruen px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-gruen-tief"
           >
             Weiter ausprobieren
           </Link>
@@ -227,7 +227,7 @@ export default function Hinweise() {
               <button
                 type="button"
                 onClick={kopieren}
-                className="rounded-lg bg-gruen px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#256a43]"
+                className="rounded-lg bg-gruen px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-gruen-tief"
               >
                 {kopiert ? "Kopiert" : "Alle kopieren"}
               </button>
