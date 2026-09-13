@@ -5,6 +5,7 @@ import Link from "next/link";
 import Linienchart from "@/components/Linienchart";
 import Sicherheitsknopf from "@/components/Sicherheitsknopf";
 import { datum as fdatum, euro, prozent, prozentKurz, zahlAusEingabe } from "@/lib/format";
+import { COINS, type Kurse, benoetigteCoins, coinSymbol, ladeKurse, mitKursen } from "@/lib/kurse";
 import {
   REBALANCING_SCHWELLE,
   aufgaben,
@@ -90,6 +91,26 @@ export default function Cockpit() {
     if (bereit) speichern(daten);
   }, [daten, bereit]);
 
+  const [kurse, setKurse] = useState<Kurse>({});
+  const coins = benoetigteCoins(daten.bilanz).sort().join(",");
+  useEffect(() => {
+    if (!bereit || !coins) return;
+    let abgebrochen = false;
+    ladeKurse(coins.split(",")).then((k) => {
+      if (abgebrochen) return;
+      setKurse(k);
+      // Der gerechnete Wert wandert in den Posten: So sehen Einstieg, Export
+      // und der naechste Aufruf ohne Netz dieselbe Zahl.
+      setDaten((d) => {
+        const neu = mitKursen(d.bilanz, k);
+        return neu === d.bilanz ? d : { ...d, bilanz: neu };
+      });
+    });
+    return () => {
+      abgebrochen = true;
+    };
+  }, [bereit, coins]);
+
   const su = useMemo(() => summen(daten.bilanz), [daten.bilanz]);
   const rate = useMemo(() => sparrateGesamt(daten.bilanz), [daten.bilanz]);
   const ng = useMemo(() => notgroschen(daten), [daten]);
@@ -109,7 +130,12 @@ export default function Cockpit() {
   function aendere(id: string, feld: keyof Posten, wert: unknown) {
     setDaten((d) => ({
       ...d,
-      bilanz: d.bilanz.map((p) => (p.id === id ? { ...p, [feld]: wert } : p)),
+      // Menge oder Coin geaendert: sofort mit dem bekannten Kurs rechnen,
+      // nicht erst beim naechsten Abruf.
+      bilanz: mitKursen(
+        d.bilanz.map((p) => (p.id === id ? { ...p, [feld]: wert } : p)),
+        kurse,
+      ),
     }));
   }
 
@@ -305,6 +331,7 @@ export default function Cockpit() {
                     <Zeile
                       key={p.id}
                       posten={p}
+                      kurs={p.coin ? kurse[p.coin] : undefined}
                       onChange={(feld, wert) => aendere(p.id, feld, wert)}
                       onEntfernen={() => entferne(p.id)}
                       vorgabe={(Math.round(renditeVon(p, daten) * 10000) / 100)
@@ -680,13 +707,16 @@ function Zeile({
   onChange,
   onEntfernen,
   vorgabe,
+  kurs,
 }: {
   posten: Posten;
   onChange: (feld: keyof Posten, wert: unknown) => void;
   onEntfernen: () => void;
   vorgabe: string;
+  kurs?: Kurse[string];
 }) {
   const istDepot = posten.art === "depot";
+  const mitKurs = !!posten.coin;
   return (
     <div className="rounded-xl border border-linie bg-flaeche p-4">
       <div className="grid gap-4 md:grid-cols-[1.4fr_1fr_1fr_auto] md:items-end">
@@ -699,12 +729,32 @@ function Zeile({
             className="w-full rounded-md border border-linie2 bg-papier px-3 py-2 outline-none focus:border-gruen"
           />
         </label>
-        <Eingabe
-          label={posten.art === "schuld" ? "Restschuld" : "Aktueller Wert"}
-          wert={posten.wert}
-          onChange={(v) => onChange("wert", v)}
-          breit
-        />
+        {mitKurs ? (
+          <div>
+            <span className="eyebrow mb-1.5 block text-tinte3">Wert aus Kurs</span>
+            <div className="rounded-md border border-linie bg-gruen-hell px-3 py-2">
+              <p className="tabular text-right font-semibold text-tinte">
+                {posten.wert !== undefined ? euro(posten.wert) : "–"}
+              </p>
+              <p className="tabular mt-0.5 text-right text-xs text-tinte3">
+                {kurs
+                  ? `${euro(kurs.eur, false)}/${coinSymbol(posten.coin!)}${
+                      kurs.aenderung24h !== undefined
+                        ? ` · ${kurs.aenderung24h >= 0 ? "+" : ""}${prozent(kurs.aenderung24h)}`
+                        : ""
+                    }`
+                  : "Kurs wird geladen …"}
+              </p>
+            </div>
+          </div>
+        ) : (
+          <Eingabe
+            label={posten.art === "schuld" ? "Restschuld" : "Aktueller Wert"}
+            wert={posten.wert}
+            onChange={(v) => onChange("wert", v)}
+            breit
+          />
+        )}
         <Eingabe
           label={posten.art === "schuld" ? "Tilgung p. M." : "Sparrate p. M."}
           wert={posten.sparrate}
@@ -764,6 +814,35 @@ function Zeile({
               />
               Haltefrist verfolgen
             </label>
+            <label className="block">
+              <span className="eyebrow mb-1.5 block text-tinte3">Coin (Kurs live)</span>
+              <select
+                value={posten.coin ?? ""}
+                onChange={(e) => {
+                  const v = e.target.value || undefined;
+                  onChange("coin", v);
+                  if (v && !posten.haltefrist) onChange("haltefrist", true);
+                }}
+                className="w-full rounded-md border border-linie2 bg-papier px-3 py-2 outline-none focus:border-gruen"
+              >
+                <option value="">kein Coin – Wert von Hand</option>
+                {COINS.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name} ({c.symbol})
+                  </option>
+                ))}
+              </select>
+            </label>
+            {mitKurs && (
+              <Eingabe
+                label={`Menge in ${coinSymbol(posten.coin!)}`}
+                einheit={coinSymbol(posten.coin!)}
+                wert={posten.menge}
+                onChange={(v) => onChange("menge", v)}
+                platzhalter="0,05"
+                breit
+              />
+            )}
           </>
         ) : (
           <p className="pb-2.5 text-xs leading-relaxed text-tinte3">

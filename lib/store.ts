@@ -50,6 +50,10 @@ export type Posten = {
   haltefrist?: boolean;
   /** Eigene Renditeannahme als Dezimalzahl. Leer = Vorgabe der Klasse. */
   rendite?: number;
+  /** Krypto: CoinGecko-Kennung, z. B. "bitcoin". Dann rechnet der Kurs den Wert. */
+  coin?: string;
+  /** Krypto: gehaltene Menge in Einheiten des Coins. */
+  menge?: number;
 };
 
 /**
