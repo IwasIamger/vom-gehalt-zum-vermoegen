@@ -385,11 +385,18 @@ export function beschaedigtenStandVerwerfen(): void {
  * Dann soll die App weiterlaufen und der Aufrufer es erfahren, statt dass ein
  * Klick unbemerkt ins Leere geht.
  */
-export function speichern(daten: Daten): boolean {
+export function speichern(
+  daten: Daten,
+  optionen: { stempel?: boolean; still?: boolean } = {},
+): boolean {
   if (typeof window === "undefined") return false;
-  const mitStempel = { ...daten, aktualisiert: new Date().toISOString() };
+  const { stempel = true, still = false } = optionen;
+  const zuSpeichern = stempel ? { ...daten, aktualisiert: new Date().toISOString() } : daten;
   try {
-    window.localStorage.setItem(KEY, JSON.stringify(mitStempel));
+    window.localStorage.setItem(KEY, JSON.stringify(zuSpeichern));
+    // Der Sync-Agent hoert hier zu. "still" ist fuer den Agenten selbst, wenn er
+    // einen fremden Stand uebernimmt - sonst wuerde er ihn gleich wieder hochladen.
+    if (!still) window.dispatchEvent(new Event("finanzcockpit:gespeichert"));
     return true;
   } catch {
     return false;

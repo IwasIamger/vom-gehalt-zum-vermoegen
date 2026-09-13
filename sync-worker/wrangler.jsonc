@@ -1,0 +1,10 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "vgzv-sync",
+  "main": "worker.js",
+  "compatibility_date": "2026-09-01",
+  "kv_namespaces": [
+    { "binding": "STAENDE", "id": "fe4c57146dc64c388c78899bd5975a29" }
+  ],
+  "observability": { "enabled": true }
+}

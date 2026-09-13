@@ -1107,6 +1107,12 @@ function Datenzeile({
         >
           Als Datei sichern
         </button>
+        <Link
+          href="/sync"
+          className="rounded-lg border border-linie2 px-5 py-2.5 text-sm font-semibold text-tinte transition-colors hover:border-gruen hover:text-gruen"
+        >
+          Mit anderem Gerät abgleichen
+        </Link>
         <button
           type="button"
           onClick={() => dateiRef.current?.click()}

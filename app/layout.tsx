@@ -4,6 +4,7 @@ import Anmerkung from "@/components/Anmerkung";
 import Designwahl from "@/components/Designwahl";
 import Offline from "@/components/Offline";
 import Speicherhinweis from "@/components/Speicherhinweis";
+import SyncAgent from "@/components/SyncAgent";
 import Tableiste from "@/components/Tableiste";
 import "./globals.css";
 
@@ -80,6 +81,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <main className="flex-1">{children}</main>
 
         <Offline />
+        <SyncAgent />
         <Anmerkung />
         <Tableiste />
 
