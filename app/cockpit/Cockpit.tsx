@@ -363,13 +363,21 @@ export default function Cockpit() {
           <section className="rounded-xl border border-linie bg-flaeche p-6">
             <div className="flex flex-wrap items-baseline justify-between gap-3">
               <h2 className="text-xl">Entwicklung</h2>
-              <button
-                type="button"
-                onClick={standFesthalten}
-                className="kein-druck rounded-lg bg-gruen px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-gruen-tief"
-              >
-                Heutigen Stand festhalten
-              </button>
+              <div className="flex flex-wrap gap-2">
+                <Link
+                  href="/rueckblick"
+                  className="kein-druck rounded-lg border border-linie2 px-4 py-2 text-sm font-semibold text-tinte transition-colors hover:border-gruen hover:text-gruen"
+                >
+                  Jahresrückblick
+                </Link>
+                <button
+                  type="button"
+                  onClick={standFesthalten}
+                  className="kein-druck rounded-lg bg-gruen px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-gruen-tief"
+                >
+                  Heutigen Stand festhalten
+                </button>
+              </div>
             </div>
             <p className="mt-2 max-w-2xl text-sm leading-relaxed text-tinte2">
               Jeder festgehaltene Stand ist ein Punkt auf der Kurve. Beim ersten Öffnen im Monat

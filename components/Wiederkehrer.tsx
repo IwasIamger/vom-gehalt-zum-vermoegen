@@ -112,6 +112,12 @@ export default function Wiederkehrer() {
         >
           Ausgabe erfassen
         </Link>
+        <Link
+          href="/rueckblick"
+          className="rounded-lg border border-[#3a4b45] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#0f1a17]"
+        >
+          Rückblick
+        </Link>
       </div>
     </div>
   );
