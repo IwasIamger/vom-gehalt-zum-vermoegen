@@ -208,3 +208,42 @@ export function proTag(ausgaben: Ausgabe[]): { datum: string; summe: number; ein
     eintraege,
   }));
 }
+
+// ─────────────────────────────────────────────────────────── CSV
+
+/** Deutsche Schreibweise: Komma als Dezimaltrenner, ohne Tausenderpunkte. */
+function csvBetrag(n: number): string {
+  return n.toFixed(2).replace(".", ",");
+}
+
+function csvFeld(text: string): string {
+  // Semikolon, Anführungszeichen oder Zeilenumbruch: dann in Anführungszeichen.
+  return /[;"\n\r]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+}
+
+/**
+ * Alle Ausgaben als CSV, so wie Excel auf Deutsch sie erwartet: Semikolon als
+ * Trenner, Dezimalkomma, UTF-8 mit Byte-Order-Mark (sonst zeigt Excel "Ã¤").
+ *
+ * Wiederkehrende Posten stehen für jeden fälligen Monat als eigene Zeile
+ * (Datum = Monatserster), damit eine Summe in Excel dasselbe ergibt wie hier.
+ */
+export function alsCsv(
+  ausgaben: Ausgabe[],
+  dauerausgaben: Dauerausgabe[] = [],
+  heute = new Date(),
+): string {
+  const zeilen: string[][] = [];
+  for (const a of ausgaben) {
+    zeilen.push([a.datum, a.kategorie, csvBetrag(a.betrag), a.notiz ?? "", "einzeln"]);
+  }
+  for (const m of proMonat([], dauerausgaben, heute)) {
+    for (const d of dauerFuerMonat(dauerausgaben, m.monat)) {
+      zeilen.push([`${m.monat}-01`, d.kategorie, csvBetrag(d.betrag), d.name, "fest"]);
+    }
+  }
+  zeilen.sort((a, b) => a[0].localeCompare(b[0]));
+  const kopf = ["Datum", "Kategorie", "Betrag", "Notiz", "Art"];
+  const text = [kopf, ...zeilen].map((z) => z.map(csvFeld).join(";")).join("\r\n");
+  return "\uFEFF" + text + "\r\n";
+}

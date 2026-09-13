@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { datum as fdatum, euro, plural, zahlAusEingabe } from "@/lib/format";
 import {
+  alsCsv,
   fortschritt,
   laufenderMonat,
   monatKurz,
@@ -529,7 +530,27 @@ export default function Ausgaben() {
       {/* ───────────────────────────── Einträge */}
       {tage.length > 0 && (
         <section className="mt-6">
-          <h2 className="text-xl">Alle Einträge</h2>
+          <div className="flex flex-wrap items-baseline justify-between gap-3">
+            <h2 className="text-xl">Alle Einträge</h2>
+            <button
+              type="button"
+              onClick={() => {
+                // Excel auf Deutsch: Semikolon, Dezimalkomma, UTF-8 mit BOM.
+                const blob = new Blob([alsCsv(daten.ausgaben, daten.dauerausgaben)], {
+                  type: "text/csv;charset=utf-8",
+                });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = `ausgaben-${new Date().toISOString().slice(0, 10)}.csv`;
+                a.click();
+                URL.revokeObjectURL(url);
+              }}
+              className="kein-druck rounded-lg border border-linie2 px-4 py-2 text-sm font-semibold text-tinte transition-colors hover:border-gruen hover:text-gruen"
+            >
+              Als CSV für Excel
+            </button>
+          </div>
           <div className="mt-5 space-y-5">
             {(alleZeigen ? tage : tage.slice(0, TAGE_KURZ)).map((t) => (
               <div key={t.datum} className="rounded-xl border border-linie bg-flaeche">

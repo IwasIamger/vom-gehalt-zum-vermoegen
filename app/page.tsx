@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Wiederkehrer from "@/components/Wiederkehrer";
 
 const gruende = [
   {
@@ -96,19 +97,7 @@ export default function Start() {
             </div>
           </div>
 
-          <div className="self-center rounded-xl border border-[#2b3a34] bg-dunkel2 p-7">
-            <p className="eyebrow text-[#7dc9a8]">Ohne Anmeldung</p>
-            <p className="mt-4 font-serif text-2xl leading-snug">
-              Alles bleibt auf deinem Gerät.
-            </p>
-            <p className="mt-3 text-sm leading-relaxed text-[#9fb0aa]">
-              Kein Konto, kein Upload, keine Weitergabe. Was du eingibst, speichert dein Browser –
-              und nur dein Browser. Du kannst es jederzeit als Datei sichern oder löschen.
-            </p>
-            <p className="mt-5 border-t border-[#2b3a34] pt-5 text-sm leading-relaxed text-[#9fb0aa]">
-              Kostenlos. Das Wissen soll weitergegeben werden, nicht verkauft.
-            </p>
-          </div>
+          <Wiederkehrer />
         </div>
       </section>
 

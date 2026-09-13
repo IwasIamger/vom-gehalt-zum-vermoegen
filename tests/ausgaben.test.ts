@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  alsCsv,
   dauerFuerMonat,
   faelligIn,
   fortschritt,
@@ -366,5 +367,48 @@ describe("fortschritt mit wiederkehrenden Posten", () => {
   it("nimmt den früheren von beiden Anfängen", () => {
     const f = fortschritt(juniBisSeptember, [dauer("Miete", 820, 1, "2026-01")], 3, HEUTE);
     expect(f.seit).toBe("2026-01-01");
+  });
+});
+
+describe("alsCsv", () => {
+  it("schreibt Kopfzeile, Semikolon und Dezimalkomma", () => {
+    const csv = alsCsv([a("2026-09-02", 24.9, "Freizeit")], [], HEUTE);
+    const zeilen = csv.replace("\uFEFF", "").trim().split("\r\n");
+    expect(zeilen[0]).toBe("Datum;Kategorie;Betrag;Notiz;Art");
+    expect(zeilen[1]).toBe("2026-09-02;Freizeit;24,90;;einzeln");
+  });
+
+  it("beginnt mit der Byte-Order-Mark für Excel", () => {
+    expect(alsCsv([], [], HEUTE).charCodeAt(0)).toBe(0xfeff);
+  });
+
+  it("setzt Anführungszeichen, wo Excel sonst stolpert", () => {
+    const e: Ausgabe = { id: "x", datum: "2026-09-02", betrag: 5, kategorie: "Sonstiges", notiz: 'Kino; "Dune"' };
+    expect(alsCsv([e], [], HEUTE)).toContain(';"Kino; ""Dune""";');
+  });
+
+  it("legt wiederkehrende Posten je Monat als Zeile ab", () => {
+    const csv = alsCsv([], [dauer("Miete", 820, 1, "2026-07")], HEUTE);
+    const zeilen = csv.replace("\uFEFF", "").trim().split("\r\n").slice(1);
+    expect(zeilen).toEqual([
+      "2026-07-01;Fixkosten;820,00;Miete;fest",
+      "2026-08-01;Fixkosten;820,00;Miete;fest",
+      "2026-09-01;Fixkosten;820,00;Miete;fest",
+    ]);
+  });
+
+  it("sortiert alles nach Datum", () => {
+    const csv = alsCsv([a("2026-09-02", 1), a("2026-06-01", 2)], [dauer("Abo", 3, 1, "2026-08")], HEUTE);
+    const daten = csv.replace("\uFEFF", "").trim().split("\r\n").slice(1).map((z) => z.split(";")[0]);
+    expect(daten).toEqual([...daten].sort());
+  });
+
+  it("die Summe in der Datei entspricht der Summe in der App", () => {
+    const csv = alsCsv(juniBisSeptember, [dauer("Miete", 820, 1, "2026-06")], HEUTE);
+    const summeCsv = csv.replace("\uFEFF", "").trim().split("\r\n").slice(1)
+      .reduce((s, z) => s + Number(z.split(";")[2].replace(",", ".")), 0);
+    const summeApp = proMonat(juniBisSeptember, [dauer("Miete", 820, 1, "2026-06")], HEUTE)
+      .reduce((s, m) => s + m.summe, 0);
+    expect(summeCsv).toBeCloseTo(summeApp, 6);
   });
 });
