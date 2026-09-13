@@ -101,6 +101,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   individuelle Beratung. Stand der Angaben: September 2026.
                 </p>
                 <p className="mt-3">
+                  <Link href="/testen" className="underline transition-colors hover:text-gruen">
+                    Mittesten
+                  </Link>
+                  {" · "}
                   <Link href="/hinweise" className="underline transition-colors hover:text-gruen">
                     Anmerkungen zur App
                   </Link>
